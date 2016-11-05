@@ -2,11 +2,13 @@ import sbt.Keys._
 import sbt._
 
 object Build extends sbt.Build {  
-  val pico_atomic     = "org.pico"              %%  "pico-atomic"       % "0.2.1"
-  val pico_disposal   = "org.pico"              %%  "pico-disposal"     % "1.0.8"
-  val pico_event      = "org.pico"              %%  "pico-event"        % "5.0.0"
+  val pico_atomic     = "org.pico"              %%  "pico-atomic"           % "0.2.1"
+  val pico_disposal   = "org.pico"              %%  "pico-disposal"         % "1.0.8"
+  val pico_event      = "org.pico"              %%  "pico-event"            % "5.0.0"
+  
+  val statsd_client   = "com.datadoghq"         %   "java-dogstatsd-client" % "2.2"
 
-  val specs2_core     = "org.specs2"            %%  "specs2-core"       % "3.8.6"
+  val specs2_core     = "org.specs2"            %%  "specs2-core"           % "3.8.6"
 
   implicit class ProjectOps(self: Project) {
     def standard(theDescription: String) = {
@@ -32,7 +34,7 @@ object Build extends sbt.Build {
 
   lazy val `pico-statsd` = Project(id = "pico-statsd", base = file("pico-statsd"))
       .standard("Tiny publish-subscriber library")
-      .libs(pico_atomic, pico_disposal, pico_event) // , cats_core)
+      .libs(pico_atomic, pico_disposal, pico_event, statsd_client) // , cats_core)
       .testLibs(specs2_core)
 
   lazy val all = Project(id = "pico-statsd-project", base = file("."))
