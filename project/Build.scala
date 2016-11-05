@@ -36,7 +36,13 @@ object Build extends sbt.Build {
       .libs(pico_atomic, pico_disposal, pico_event, statsd_client)
       .testLibs(specs2_core)
 
-  lazy val all = Project(id = "pico-event-project", base = file("."))
+  lazy val `pico-statsd-impl` = Project(id = "pico-statsd-impl", base = file("pico-statsd-impl"))
+      .standard("Statsd library imp")
+      .dependsOn(`pico-statsd`)
+      .libs(statsd_client)
+      .testLibs(specs2_core)
+
+  lazy val all = Project(id = "pico-statsd-project", base = file("."))
       .notPublished
-      .aggregate(`pico-statsd`, `pico-fake`)
+      .aggregate(`pico-statsd`, `pico-statsd-impl`, `pico-fake`)
 }

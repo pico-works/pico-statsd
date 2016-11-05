@@ -14,7 +14,6 @@ package object event {
   }
   
   implicit class SourceOps_Counter_Rht98nT[A](val self: Source[A]) extends AnyVal {
-    
     @inline
     def counting(aspect: String, tags: String*)
                (implicit c: StatsDClient): Source[A] = {
@@ -35,7 +34,6 @@ package object event {
   }
   
   implicit class SourceOps_Gauge_Rht98nT[A](val self: Source[A]) extends AnyVal {
-    
     @inline
     def viaGauge(aspect: String, value: A, tags: String*)
                     (implicit c: StatsDClient, m: GaugeMetric[A]): Source[A] = {
@@ -44,7 +42,6 @@ package object event {
   }
   
   implicit class SourceOps_Histogram_Rht98nT[A](val self: Source[A]) extends AnyVal {
-
     @inline
     def viaHistogram(aspect: String, value: A, tags: String*)
                  (implicit c: StatsDClient, m: HistogramMetric[A]): Source[A] = {
