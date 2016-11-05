@@ -34,7 +34,7 @@ object Build extends sbt.Build {
 
   lazy val `pico-statsd` = Project(id = "pico-statsd", base = file("pico-statsd"))
       .standard("Tiny publish-subscriber library")
-      .libs(pico_atomic, pico_disposal, statsd_client) // , cats_core)
+      .libs(pico_atomic, pico_disposal, pico_event, statsd_client) // , cats_core)
       .testLibs(specs2_core)
 
   lazy val all = Project(id = "pico-statsd-project", base = file("."))
