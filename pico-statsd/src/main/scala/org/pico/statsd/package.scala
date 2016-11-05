@@ -4,11 +4,11 @@ import com.timgroup.statsd.StatsDClient
 import org.pico.event.Sink
 
 package object statsd {
-  val Ok = Status(0)
-  val Warning = Status(1)
-  val Critical = Status(2)
-  val Unknown = Status(3)
-  
+  /**
+    * Generic StatsD sink. Have a reference to both [[StatsDClient]] and a message
+    * and do what you want
+    * @param f handle the message using a StatsDClient provided
+    */
   def statsSink[A](f: (StatsDClient, A) => Unit)
                (implicit c: StatsDClient): Sink[A] = {
     Sink[A](a => f(c, a))

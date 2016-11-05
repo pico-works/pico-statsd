@@ -1,13 +1,11 @@
 package org.pico.statsd.syntax
 
 import com.timgroup.statsd.StatsDClient
-import org.pico.event.{Sink, Source}
+import org.pico.event.Source
 import org.pico.statsd.{CounterMetric, GaugeMetric, HistogramMetric}
 
 package object event {
-  
   implicit class SourceOps_Common_Rht98nT[A](val self: Source[A]) extends AnyVal {
-  
     @inline
     def stats(f: (StatsDClient, A) => Unit)
              (implicit c: StatsDClient): Source[A] = {

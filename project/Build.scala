@@ -5,7 +5,6 @@ object Build extends sbt.Build {
   val pico_atomic     = "org.pico"              %%  "pico-atomic"           % "0.2.1"
   val pico_disposal   = "org.pico"              %%  "pico-disposal"         % "1.0.8"
   val pico_event      = "org.pico"              %%  "pico-event"            % "5.0.0"
-  
   val statsd_client   = "com.datadoghq"         %   "java-dogstatsd-client" % "2.2"
 
   val specs2_core     = "org.specs2"            %%  "specs2-core"           % "3.8.6"
