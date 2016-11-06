@@ -30,12 +30,12 @@ object Build extends sbt.Build {
       .standard("Fake project").notPublished
       .testLibs(specs2_core)
 
-  lazy val `pico-event` = Project(id = "pico-event", base = file("pico-event"))
+  lazy val `pico-statsd` = Project(id = "pico-statsd", base = file("pico-statsd"))
       .standard("Tiny publish-subscriber library")
-      .libs(pico_atomic, pico_disposal) // , cats_core)
+      .libs(pico_atomic, pico_disposal, pico_event) // , cats_core)
       .testLibs(specs2_core)
 
-  lazy val all = Project(id = "pico-event-project", base = file("."))
+  lazy val all = Project(id = "pico-statsd-project", base = file("."))
       .notPublished
-      .aggregate(`pico-event`, `pico-fake`)
+      .aggregate(`pico-statsd`, `pico-fake`)
 }
