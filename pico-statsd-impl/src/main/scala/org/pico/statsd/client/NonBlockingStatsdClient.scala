@@ -30,8 +30,7 @@ final class NonBlockingStatsdClient(
 
   override def send[A: Metric](metric: A): Unit = queue.offer(Metric.of[A].encodeMetric(metric, messagePrefix, tagString))
 
-  private class QueueConsumer(
-      val addressLookup: () => InetSocketAddress) extends Runnable {
+  private class QueueConsumer(val addressLookup: () => InetSocketAddress) extends Runnable {
     final private val sendBuffer: ByteBuffer = ByteBuffer.allocate(NonBlockingStatsdClient.PACKET_SIZE_BYTES)
 
     override def run(): Unit = {

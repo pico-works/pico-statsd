@@ -4,7 +4,6 @@ import java.io.Closeable
 
 import org.pico.event.Source
 import org.pico.statsd.client.metrics.Event
-import org.pico.statsd.syntax.show._
 
 trait StatsdClient extends Closeable {
   def errors: Source[Exception]
@@ -20,35 +19,26 @@ object StatsdClient {
   def escapeEventString(title: String): String = title.replace("\n", "\\n")
 
   def eventMap(event: Event): String = {
-    val res: StringBuilder = new StringBuilder("")
-    val millisSinceEpoch: Long = event.millisSinceEpoch
+    val res = new StringBuilder("")
 
-    if (millisSinceEpoch != -1) {
-      res.append("|d:").append(millisSinceEpoch / 1000)
+    if (event.millisSinceEpoch != -1) {
+      res.append("|d:").append(event.millisSinceEpoch / 1000)
     }
 
-    val hostname: String = event.hostname
-
-    if (hostname != null) {
-      res.append("|h:").append(hostname)
+    if (event.hostname.nonEmpty) {
+      res.append("|h:").append(event.hostname)
     }
 
-    val aggregationKey: String = event.aggregationKey
-
-    if (aggregationKey != null) {
-      res.append("|k:").append(aggregationKey)
+    if (event.aggregationKey != null) {
+      res.append("|k:").append(event.aggregationKey)
     }
 
-    val priority: String = event.priority
-
-    if (priority != null) {
-      res.append("|p:").append(priority)
+    if (event.priority.nonEmpty) {
+      res.append("|p:").append(event.priority)
     }
 
-    val alertType: String = event.alertType
-
-    if (alertType != null) {
-      res.append("|t:").append(alertType)
+    if (event.alertType.nonEmpty) {
+      res.append("|t:").append(event.alertType)
     }
 
     res.toString
