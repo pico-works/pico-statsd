@@ -21,14 +21,14 @@ final class NonBlockingStatsdClient(
 
   val errors = Bus[Exception]
 
-  private val constantTagsRendered = NonBlockingStatsdClient.tagString(constantTags, "")
+  private val constantTagsRendered = NonBlockingStatsdClient.tagString("", constantTags)
   private val clientChannel = this.disposesOrClose(DatagramChannel.open)
   private val queue: BlockingQueue[String] = new LinkedBlockingQueue[String](queueSize)
   private val executor: ExecutorService = this.disposesOrClose(Executors.newSingleThreadExecutor(StatsdDaemonThreadFactory))
 
   executor.submit(new QueueConsumer(addressLookup))
 
-  override def tagString(tags: Seq[String]): String = NonBlockingStatsdClient.tagString(tags.toArray, constantTagsRendered)
+  override def tagString(tags: Seq[String]): String = NonBlockingStatsdClient.tagString(constantTagsRendered, tags.toArray)
 
   override def send[A: Metric](metric: A): Unit = queue.offer(Metric.of[A].encodeMetric(metric, messagePrefix, tagString))
 
@@ -87,7 +87,7 @@ final class NonBlockingStatsdClient(
 object NonBlockingStatsdClient {
   private val PACKET_SIZE_BYTES: Int = 1500
 
-  def tagString(tags: Array[String], tagPrefix: String): String = {
+  def tagString(tagPrefix: String, tags: Array[String]): String = {
     if (tags.isEmpty) {
       tagPrefix
     } else {
