@@ -1,7 +1,5 @@
 package org.pico.statsd
 
-import com.timgroup.statsd.StatsDClient
-
 /**
   * Classifies value as a gauge metric.
   * The trait is sealed so only smart constructors can be used to create instances.
@@ -9,7 +7,7 @@ import com.timgroup.statsd.StatsDClient
 sealed trait GaugeMetric[A] {
   def tags(value: A): List[String]
   
-  def send(client: StatsDClient, aspect: String, value: A, extraTags: List[String]): Unit
+  def send(client: StatsdClient, aspect: String, value: A, extraTags: List[String]): Unit
 }
 
 object GaugeMetric {
@@ -20,7 +18,7 @@ object GaugeMetric {
     */
   def integral[A](toValue: A => Long, toTags: A => List[String]): GaugeMetric[A] = new GaugeMetric[A] {
     def tags(value: A) = toTags(value)
-    def send(client: StatsDClient, aspect: String, v: A, t: List[String]): Unit =
+    def send(client: StatsdClient, aspect: String, v: A, t: List[String]): Unit =
       client.gauge(aspect, toValue(v), t ++ tags(v): _*)
   }
   
@@ -31,7 +29,7 @@ object GaugeMetric {
     */
   def fractional[A](toValue: A => Double, toTags: A => List[String]): GaugeMetric[A] = new GaugeMetric[A] {
     def tags(value: A) = toTags(value)
-    def send(client: StatsDClient, aspect: String, v: A, t: List[String]): Unit =
+    def send(client: StatsdClient, aspect: String, v: A, t: List[String]): Unit =
       client.gauge(aspect, toValue(v), t ++ tags(v): _*)
   }
   

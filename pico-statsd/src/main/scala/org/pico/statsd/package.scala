@@ -1,6 +1,5 @@
 package org.pico
 
-import com.timgroup.statsd.StatsDClient
 import org.pico.event.Sink
 
 package object statsd {
@@ -10,27 +9,27 @@ package object statsd {
   val Unknown = Status(3)
   
   /**
-    * Generic StatsD sink. Have a reference to both [[StatsDClient]] and a message
+    * Generic StatsD sink. Have a reference to both [[StatsdClient]] and a message
     * and do what you want
-    * @param f handle the message using a StatsDClient provided
+    * @param f handle the message using a StatsdClient provided
     */
-  def statsSink[A](f: (StatsDClient, A) => Unit)
-               (implicit c: StatsDClient): Sink[A] = {
+  def statsSink[A](f: (StatsdClient, A) => Unit)
+               (implicit c: StatsdClient): Sink[A] = {
     Sink[A](a => f(c, a))
   }
   
   def counterSink[A](aspect: String, value: A, tags: String*)
-                    (implicit c: StatsDClient, m: CounterMetric[A]): Sink[A] = {
+                    (implicit c: StatsdClient, m: CounterMetric[A]): Sink[A] = {
     Sink[A](a => m.send(c, aspect, a, tags.toList))
   }
   
   def gaugeSink[A](aspect: String, value: A, tags: String*)
-                  (implicit c: StatsDClient, m: GaugeMetric[A]): Sink[A] = {
+                  (implicit c: StatsdClient, m: GaugeMetric[A]): Sink[A] = {
     Sink[A](a => m.send(c, aspect, a, tags.toList))
   }
   
   def histogramSink[A](aspect: String, value: A, tags: String*)
-                      (implicit c: StatsDClient, m: HistogramMetric[A]): Sink[A] = {
+                      (implicit c: StatsdClient, m: HistogramMetric[A]): Sink[A] = {
     Sink[A](a => m.send(c, aspect, a, tags.toList))
   }
 }
