@@ -87,30 +87,12 @@ final class NonBlockingStatsdClient(
 object NonBlockingStatsdClient {
   private val PACKET_SIZE_BYTES: Int = 1500
 
-  def appendTags(sb: StringBuilder, tags: Array[String]): Unit = {
-    var n = tags.length - 1
-
-    while (n >= 0) {
-      sb.append(tags(n))
-
-      if (n > 0) {
-        sb.append(",")
-      }
-
-      n -= 1
-    }
-  }
-
   def tagString(tags: Array[String], tagPrefix: String): String = {
     if (tags.isEmpty) {
       tagPrefix
     } else {
-      val sb = if (tagPrefix.nonEmpty) {
-        new StringBuilder(tagPrefix).append(",")
-      } else {
-        new StringBuilder("|#")
-      }
-      appendTags(sb, tags)
+      val sb = if (tagPrefix.nonEmpty) new StringBuilder(tagPrefix).append(",") else new StringBuilder("|#")
+      sb.append(sb.append(tags.mkString(",")))
       sb.toString
     }
   }
