@@ -17,14 +17,12 @@ final class NonBlockingStatsdClient(
     val queueSize: Int,
     val constantTags: Array[String] = Array.empty,
     val addressLookup: () => InetSocketAddress) extends StatsdClient with SimpleDisposer {
-  val messagePrefix = if (!prefix.isEmpty) String.format("%s.", prefix) else ""
-
+  val messagePrefix = if (!prefix.isEmpty) prefix + "." else ""
   val errors = Bus[Exception]
-
-  private val constantTagsRendered = NonBlockingStatsdClient.tagString("", constantTags)
-  private val clientChannel = this.disposesOrClose(DatagramChannel.open)
-  private val queue: BlockingQueue[String] = new LinkedBlockingQueue[String](queueSize)
-  private val executor: ExecutorService = this.disposesOrClose(Executors.newSingleThreadExecutor(StatsdDaemonThreadFactory))
+  val constantTagsRendered = NonBlockingStatsdClient.tagString("", constantTags)
+  val clientChannel = this.disposesOrClose(DatagramChannel.open)
+  val queue = new LinkedBlockingQueue[String](queueSize)
+  val executor = this.disposesOrClose(Executors.newSingleThreadExecutor(StatsdDaemonThreadFactory))
 
   executor.submit(new QueueConsumer(addressLookup))
 
