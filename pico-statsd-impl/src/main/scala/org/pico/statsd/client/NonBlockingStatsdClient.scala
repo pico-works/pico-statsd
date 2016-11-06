@@ -13,54 +13,24 @@ import org.pico.disposal.std.executorService._
 import org.pico.event.Bus
 
 final class NonBlockingStatsdClient(
-    var prefix: String = null,
+    val prefix: String,
     val queueSize: Int,
-    var constantTags: Array[String] = null,
+    val constantTags: Array[String] = Array.empty,
     val addressLookup: () => InetSocketAddress) extends StatsdClient with SimpleDisposer {
+  val messagePrefix = if (!prefix.isEmpty) String.format("%s.", prefix) else ""
+
   val errors = Bus[Exception]
 
-  this.prefix = if (prefix != null && !prefix.isEmpty) {
-    String.format("%s.", prefix)
-  } else {
-    ""
-  }
-
-  if (constantTags != null && constantTags.isEmpty) {
-    constantTags = null
-  }
-
-  private val constantTagsRendered = if (constantTags != null) {
-    NonBlockingStatsdClient.tagString(constantTags, null)
-  } else {
-    null
-  }
-
-  private val clientChannel = this.disposesOrClose {
-    try {
-      DatagramChannel.open
-    } catch {
-      case e: Exception => throw new StatsdException("Failed to start StatsD client", e)
-    }
-  }
-
+  private val constantTagsRendered = NonBlockingStatsdClient.tagString(constantTags, "")
+  private val clientChannel = this.disposesOrClose(DatagramChannel.open)
   private val queue: BlockingQueue[String] = new LinkedBlockingQueue[String](queueSize)
-
-  private val executor: ExecutorService = this.disposesOrClose(Executors.newSingleThreadExecutor(new ThreadFactory {
-    val delegate: ThreadFactory = Executors.defaultThreadFactory
-
-    override def newThread(r: Runnable): Thread = {
-      val result: Thread = delegate.newThread(r)
-      result.setName("StatsD-" + result.getName)
-      result.setDaemon(true)
-      result
-    }
-  }))
+  private val executor: ExecutorService = this.disposesOrClose(Executors.newSingleThreadExecutor(StatsdDaemonThreadFactory))
 
   executor.submit(new QueueConsumer(addressLookup))
 
-  override def tagString(tags: String*): String = NonBlockingStatsdClient.tagString(tags.toArray, constantTagsRendered)
+  override def tagString(tags: Seq[String]): String = NonBlockingStatsdClient.tagString(tags.toArray, constantTagsRendered)
 
-  override def send(message: String): Unit = queue.offer(message)
+  override def send[A: Metric](metric: A): Unit = queue.offer(Metric.of[A].encodeMetric(metric, messagePrefix, tagString))
 
   private class QueueConsumer(
       val addressLookup: () => InetSocketAddress) extends Runnable {
@@ -96,55 +66,52 @@ final class NonBlockingStatsdClient(
     }
 
     private def blockingSend(address: InetSocketAddress): Unit = {
-      val sizeOfBuffer: Int = sendBuffer.position
+      val sizeOfBuffer = sendBuffer.position
       sendBuffer.flip
-      val sentBytes: Int = clientChannel.send(sendBuffer, address)
-      sendBuffer.limit(sendBuffer.capacity)
-      sendBuffer.rewind
+
+      val sentBytes = try {
+        clientChannel.send(sendBuffer, address)
+      } finally {
+        sendBuffer.limit(sendBuffer.capacity)
+        sendBuffer.rewind
+      }
+
       if (sizeOfBuffer != sentBytes) {
         errors.publish(new IOException(
-          s"Could not send entirely stat $sendBuffer to host ${address.getHostName}:${address.getPort}. Only sent $sentBytes bytes out of $sizeOfBuffer bytes"))
+          s"Could not send entire stat $sendBuffer to host ${address.getHostName}:${address.getPort}. Only sent $sentBytes bytes out of $sizeOfBuffer bytes"))
       }
     }
   }
 }
 
-
 object NonBlockingStatsdClient {
   private val PACKET_SIZE_BYTES: Int = 1500
 
-  def tagString(tags: Array[String], tagPrefix: String): String = {
-    def appendTags(sb: StringBuilder): Unit = {
-      var n = tags.length - 1
+  def appendTags(sb: StringBuilder, tags: Array[String]): Unit = {
+    var n = tags.length - 1
 
-      while (n >= 0) {
-        sb.append(tags(n))
+    while (n >= 0) {
+      sb.append(tags(n))
 
-        if (n > 0) {
-          sb.append(",")
-        }
-
-        n -= 1
-      }
-    }
-
-    if (tagPrefix != null) {
-      if (tags == null || tags.length == 0) {
-        tagPrefix
-      } else {
-        val sb = new StringBuilder(tagPrefix)
+      if (n > 0) {
         sb.append(",")
-        appendTags(sb)
-        sb.toString
       }
+
+      n -= 1
+    }
+  }
+
+  def tagString(tags: Array[String], tagPrefix: String): String = {
+    if (tags.isEmpty) {
+      tagPrefix
     } else {
-      if (tags == null || tags.length == 0) {
-        ""
+      val sb = if (tagPrefix.nonEmpty) {
+        new StringBuilder(tagPrefix).append(",")
       } else {
-        val sb = new StringBuilder("|#")
-        appendTags(sb)
-        sb.toString
+        new StringBuilder("|#")
       }
+      appendTags(sb, tags)
+      sb.toString
     }
   }
 
