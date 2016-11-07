@@ -32,7 +32,7 @@ object Build extends sbt.Build {
       .testLibs(specs2_core)
 
   lazy val `pico-statsd` = Project(id = "pico-statsd", base = file("pico-statsd"))
-      .standard("Tiny publish-subscriber library")
+      .standard("Statsd library")
       .libs(pico_atomic, pico_disposal, pico_event, statsd_client) // , cats_core)
       .testLibs(specs2_core)
 
