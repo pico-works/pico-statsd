@@ -14,17 +14,17 @@ package object statsd {
     Sink[A](a => f(c, a))
   }
   
-  def counterSink[A](aspect: String, value: A, tags: String*)
+  def counterSink[A](aspect: String, tags: String*)
                     (implicit c: StatsDClient, m: CounterMetric[A]): Sink[A] = {
     Sink[A](a => m.send(c, aspect, a, tags.toList))
   }
   
-  def gaugeSink[A](aspect: String, value: A, tags: String*)
+  def gaugeSink[A](aspect: String, tags: String*)
                   (implicit c: StatsDClient, m: GaugeMetric[A]): Sink[A] = {
     Sink[A](a => m.send(c, aspect, a, tags.toList))
   }
   
-  def histogramSink[A](aspect: String, value: A, tags: String*)
+  def histogramSink[A](aspect: String, tags: String*)
                       (implicit c: StatsDClient, m: HistogramMetric[A]): Sink[A] = {
     Sink[A](a => m.send(c, aspect, a, tags.toList))
   }
