@@ -1,0 +1,28 @@
+package org.pico.statsd.syntax.event
+
+import com.timgroup.statsd.NoOpStatsDClient
+import org.pico.event.Bus
+import org.specs2.mutable.Specification
+
+class TimersSpec extends Specification {
+  implicit val statsd = new NoOpStatsDClient()
+  "Ensuring messages go through" >> {
+    "with SinkSource" in {
+      val bus = Bus[Int].withSimpleTimer("bus.test")
+      val sum = bus.foldRight(0)(_ + _)
+      
+      (1 to 10 ).foreach(bus.publish)
+      
+      sum.value ==== 55
+    }
+  
+    "with Source" in {
+      val bus = Bus[Int]
+      val sum = bus.map(x => x + 1).withSimpleTimer("bus.test").foldRight(0)(_ + _)
+    
+      (1 to 10 ).foreach(bus.publish)
+    
+      sum.value ==== 65
+    }
+  }
+}
