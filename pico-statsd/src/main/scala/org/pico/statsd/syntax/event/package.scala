@@ -3,11 +3,26 @@ package org.pico.statsd.syntax
 import com.timgroup.statsd.StatsDClient
 import org.pico.disposal.std.autoCloseable._
 import org.pico.event.{Bus, SinkSource, Source}
-import org.pico.statsd.{CounterMetric, GaugeMetric, HistogramMetric, TimerMetric}
+import org.pico.statsd._
 
 import scala.concurrent.duration.Deadline
 
 package object event {
+  
+  //-------------------- METRIC --------------------------------------------
+  implicit class SinkSourceOps_Metric_Rht98nT[A, B](val self: SinkSource[A, B]) extends AnyVal {
+    def withMetrics(aspect: String, extraTags: String*)(implicit c: StatsDClient, m: Metric[B]): SinkSource[A, B] = {
+      self += self.effect(sendMetrics(c, aspect, extraTags.toList, m))
+      self
+    }
+  }
+  
+  implicit class SourceOps_Metric_Rht98nT[A](val self: Source[A]) extends AnyVal {
+    def withMetrics(aspect: String, extraTags: String*)(implicit c: StatsDClient, m: Metric[A]): Source[A] = {
+      self += self.effect(sendMetrics(c, aspect, extraTags.toList, m))
+      self
+    }
+  }
   
   //-------------------- COMMON --------------------------------------------
   implicit class SinkSourceOps_Common_Rht98nT[A, B](val self: SinkSource[A, B]) extends AnyVal {
@@ -110,69 +125,90 @@ package object event {
   
     @inline
     def withCounter(aspect: String, tags: String*)
-                   (implicit c: StatsDClient, m: CounterMetric[B]): SinkSource[A, B] = {
-      self += self.subscribe(x => m.send(c, aspect, x, tags.toList))
+                   (implicit c: StatsDClient): SinkSource[A, B] = {
+      self += self.subscribe(a => c.count(aspect, 1, tags: _*))
       self
     }
   }
   
-  
   implicit class SourceOps_Counter_Rht98nT[A](val self: Source[A]) extends AnyVal {
-
+    
     @inline
     def withCounter(aspect: String, delta: Long, tags: String*)
                    (implicit c: StatsDClient): Source[A] = {
-      self += self.subscribe(a => c.count(aspect, delta, tags: _*))
-      self
+      self.effect(a => c.count(aspect, delta, tags: _*))
     }
-
+    
     @inline
     def withCounter(aspect: String, tags: String*)
-                   (implicit c: StatsDClient, m: CounterMetric[A]): Source[A] = {
-      self += self.subscribe(a => m.send(c, aspect, a, tags.toList))
-      self
+                   (implicit c: StatsDClient): Source[A] = {
+      self.effect(a => c.count(aspect, 1, tags: _*))
     }
   }
   
   //-------------------- GAUGES --------------------------------------------
   implicit class SinkSourceOps_Gauge_Rht98nT[A, B](val self: SinkSource[A, B]) extends AnyVal {
-    
+  
     @inline
-    def withGauge(aspect: String, tags: String*)
-                 (implicit c: StatsDClient, m: GaugeMetric[B]): SinkSource[A, B] = {
-      self += self.subscribe { x => m.send(c, aspect, x, tags.toList) }
+    def withIntegralGauge(aspect: String, value: B => Long, extraTags: String*)
+                         (implicit c: StatsDClient): SinkSource[A, B] = {
+      self += self.subscribe { x => c.gauge(aspect, value(x), extraTags: _*) }
+      self
+    }
+  
+    @inline
+    def withFractionalGauge(aspect: String, value: B => Long, extraTags: String*)
+                         (implicit c: StatsDClient): SinkSource[A, B] = {
+      self += self.subscribe { x => c.gauge(aspect, value(x), extraTags: _*) }
       self
     }
   }
   
   implicit class SourceOps_Gauge_Rht98nT[A](val self: Source[A]) extends AnyVal {
+  
+    @inline
+    def withIntegralGauge(aspect: String, value: A => Long, extraTags: String*)
+                           (implicit c: StatsDClient): Source[A] = {
+      self.effect { x => c.gauge(aspect, value(x), extraTags: _*) }
+    }
     
     @inline
-    def withGauge(aspect: String, tags: String*)
-                 (implicit c: StatsDClient, m: GaugeMetric[A]): Source[A] = {
-      self += self.subscribe { x => m.send(c, aspect, x, tags.toList) }
-      self
+    def withFractionalGauge(aspect: String, value: A => Double, extraTags: String*)
+                 (implicit c: StatsDClient): Source[A] = {
+      self.effect { x => c.gauge(aspect, value(x), extraTags: _*) }
     }
   }
   
   //-------------------- HISTOGRAMS ------------------------------------------
   implicit class SinkSourceOps_Histogram_Rht98nT[A, B](val self: SinkSource[A, B]) extends AnyVal {
-
+  
     @inline
-    def withHistogram(aspect: String, tags: String*)
-                     (implicit c: StatsDClient, m: HistogramMetric[B]): SinkSource[A, B] = {
-      self += self.subscribe { x => m.send(c, aspect, x, tags.toList) }
+    def withIntegralHistogram(aspect: String, value: B => Long, extraTags: String*)
+                         (implicit c: StatsDClient): SinkSource[A, B] = {
+      self += self.subscribe { x => c.histogram(aspect, value(x), extraTags: _*) }
+      self
+    }
+  
+    @inline
+    def withFractionalHistogram(aspect: String, value: B => Long, extraTags: String*)
+                           (implicit c: StatsDClient): SinkSource[A, B] = {
+      self += self.subscribe { x => c.histogram(aspect, value(x), extraTags: _*) }
       self
     }
   }
   
   implicit class SourceOps_Histogram_Rht98nT[A](val self: Source[A]) extends AnyVal {
-
+  
     @inline
-    def withHistogram(aspect: String, tags: String*)
-                     (implicit c: StatsDClient, m: HistogramMetric[A]): Source[A] = {
-      self += self.subscribe { x => m.send(c, aspect, x, tags.toList) }
-      self
+    def withIntegralHistogram(aspect: String, value: A => Long, extraTags: String*)
+                             (implicit c: StatsDClient): Source[A] = {
+      self.effect { x => c.histogram(aspect, value(x), extraTags: _*) }
+    }
+  
+    @inline
+    def withFractionalHistogram(aspect: String, value: A => Double, extraTags: String*)
+                               (implicit c: StatsDClient): Source[A] = {
+      self.effect { x => c.histogram(aspect, value(x), extraTags: _*) }
     }
   }
 }
