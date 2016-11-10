@@ -51,7 +51,7 @@ package object statsd {
         c.count(fullAspectName(aspect), v, tags: _*)
 
       case Timer(aspect, v) =>
-        c.time(fullAspectName(aspect), v, tags: _*)
+        c.time(fullAspectName(aspect), v.toMillis, tags: _*)
     }
   }
 }
