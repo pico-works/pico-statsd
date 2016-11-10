@@ -18,6 +18,7 @@ case class FractionalGauge(aspect: String, value: Double)     extends MetricValu
 case class IntegralHistogram(aspect: String, value: Long)     extends MetricValue
 case class FractionalHistogram(aspect: String, value: Double) extends MetricValue
 case class Counter(aspect: String, value: Long)               extends MetricValue
+case class Timer(aspect: String, value: Long)                 extends MetricValue
 
 
 
