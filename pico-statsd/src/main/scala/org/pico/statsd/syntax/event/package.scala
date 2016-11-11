@@ -136,13 +136,15 @@ package object event {
     @inline
     def withCounter(aspect: String, delta: Long, tags: String*)
                    (implicit c: StatsDClient): Source[A] = {
-      self.effect(a => c.count(aspect, delta, tags: _*))
+      self += self.effect(a => c.count(aspect, delta, tags: _*))
+      self
     }
     
     @inline
     def withCounter(aspect: String, tags: String*)
                    (implicit c: StatsDClient): Source[A] = {
-      self.effect(a => c.count(aspect, 1, tags: _*))
+      self += self.effect(a => c.count(aspect, 1, tags: _*))
+      self
     }
   }
   
@@ -169,13 +171,15 @@ package object event {
     @inline
     def withIntegralGauge(aspect: String, value: A => Long, extraTags: String*)
                            (implicit c: StatsDClient): Source[A] = {
-      self.effect { x => c.gauge(aspect, value(x), extraTags: _*) }
+      self += self.effect { x => c.gauge(aspect, value(x), extraTags: _*) }
+      self
     }
     
     @inline
     def withFractionalGauge(aspect: String, value: A => Double, extraTags: String*)
                  (implicit c: StatsDClient): Source[A] = {
-      self.effect { x => c.gauge(aspect, value(x), extraTags: _*) }
+      self += self.effect { x => c.gauge(aspect, value(x), extraTags: _*) }
+      self
     }
   }
   
@@ -202,13 +206,15 @@ package object event {
     @inline
     def withIntegralHistogram(aspect: String, value: A => Long, extraTags: String*)
                              (implicit c: StatsDClient): Source[A] = {
-      self.effect { x => c.histogram(aspect, value(x), extraTags: _*) }
+      self += self.effect { x => c.histogram(aspect, value(x), extraTags: _*) }
+      self
     }
   
     @inline
     def withFractionalHistogram(aspect: String, value: A => Double, extraTags: String*)
                                (implicit c: StatsDClient): Source[A] = {
-      self.effect { x => c.histogram(aspect, value(x), extraTags: _*) }
+      self += self.effect { x => c.histogram(aspect, value(x), extraTags: _*) }
+      self
     }
   }
 }
