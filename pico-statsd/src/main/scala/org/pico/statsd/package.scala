@@ -14,44 +14,46 @@ package object statsd {
     Sink[A](a => f(c, a))
   }
   
-  def metricsSink[A](aspect: String, tags: String*)
+  def metricsSink[A](aspect: String, sampleRate: Option[Double], tags: String*)
                     (implicit c: StatsDClient, m: Metric[A]): Sink[A] = {
-    Sink[A](sendMetrics(c, aspect, tags.toList, m))
+    Sink[A](sendMetrics(c, sampleRate, aspect, tags.toList, m))
   }
-  
-  
-  def counterSink[A](aspect: String, delta: Long, tags: String*)
-                     (implicit c: StatsDClient): Sink[A] = {
-    Sink[A](a => c.count(aspect, delta, tags: _*))
-  }
-  
-  def counterSink[A](aspect: String, tags: String*)
-                     (implicit c: StatsDClient): Sink[A] = {
-    counterSink[A](aspect, 1, tags: _*)
-  }
-  
-  private[statsd] def sendMetrics[A](c: StatsDClient, prefix: String, extraTags: List[String], m: Metric[A])(value: A): Unit = {
-    def fullAspectName(aspect: String) = if (prefix == null || prefix.isEmpty) aspect else prefix + "." + aspect
-    
-    val tags = extraTags ++ m.tags(value)
-    m.values(value).foreach {
-      case IntegralGauge(aspect, v) =>
-        c.gauge(fullAspectName(aspect), v, tags: _*)
-      
-      case FractionalGauge(aspect, v) =>
-        c.gauge(fullAspectName(aspect), v, tags: _*)
-      
-      case IntegralHistogram(aspect, v) =>
-        c.histogram(fullAspectName(aspect), v, tags: _*)
-      
-      case FractionalHistogram(aspect, v) =>
-        c.histogram(fullAspectName(aspect), v, tags: _*)
-      
-      case Counter(aspect, v) =>
-        c.count(fullAspectName(aspect), v, tags: _*)
 
-      case Timer(aspect, v) =>
-        c.time(fullAspectName(aspect), v.toMillis, tags: _*)
-    }
+
+  def counterSink[A](aspect: String, sampleRate: Option[Double], delta: Long, tags: String*)
+                     (implicit c: StatsDClient): Sink[A] = {
+        Sink[A](a => c.count(aspect, delta, sampleRate.getOrElse(1d), tags: _*))
   }
+  
+  def counterSink[A](aspect: String, sampleRate: Option[Double], tags: String*)
+                     (implicit c: StatsDClient): Sink[A] = {
+    counterSink[A](aspect, sampleRate, 1, tags: _*)
+  }
+  
+  private[statsd] def sendMetrics[A](c: StatsDClient, sampleRate: Option[Double], prefix: String, extraTags: List[String], m: Metric[A])(value: A): Unit = {
+    def fullAspectName(aspect: String) = if (prefix == null || prefix.isEmpty) aspect else prefix + "." + aspect
+
+    val tags = extraTags ++ m.tags(value)
+    val sr = sampleRate.getOrElse(1d)
+
+        m.values(value).foreach {
+          case IntegralGauge(aspect, v) =>
+            c.gauge(fullAspectName(aspect), v, sr, tags: _*)
+
+          case FractionalGauge(aspect, v) =>
+            c.gauge(fullAspectName(aspect), v, sr, tags: _*)
+
+          case IntegralHistogram(aspect, v) =>
+            c.histogram(fullAspectName(aspect), v, sr, tags: _*)
+
+          case FractionalHistogram(aspect, v) =>
+            c.histogram(fullAspectName(aspect), v, sr, tags: _*)
+
+          case Counter(aspect, v) =>
+            c.count(fullAspectName(aspect), v, sr, tags: _*)
+
+          case Timer(aspect, v) =>
+            c.time(fullAspectName(aspect), v.toMillis, sr, tags: _*)
+        }
+    }
 }
