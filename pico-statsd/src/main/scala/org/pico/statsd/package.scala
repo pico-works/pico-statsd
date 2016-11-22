@@ -14,44 +14,44 @@ package object statsd {
     Sink[A](a => f(c, a))
   }
   
-  def metricsSink[A](aspect: String, tags: String*)
+  def metricsSink[A](aspect: String, sampleRate: Option[Double], tags: String*)
                     (implicit c: StatsDClient, m: Metric[A]): Sink[A] = {
-    Sink[A](sendMetrics(c, aspect, tags.toList, m))
+    Sink[A](sendMetrics(c, aspect, sampleRate.getOrElse(1d), tags.toList, m))
   }
   
   
-  def counterSink[A](aspect: String, delta: Long, tags: String*)
+  def counterSink[A](aspect: String, sampleRate: Option[Double], delta: Long, tags: String*)
                      (implicit c: StatsDClient): Sink[A] = {
-    Sink[A](a => c.count(aspect, delta, tags: _*))
+    Sink[A](a => c.count(aspect, delta, sampleRate.getOrElse(1d), tags: _*))
   }
   
-  def counterSink[A](aspect: String, tags: String*)
+  def counterSink[A](aspect: String, sampleRate: Option[Double], tags: String*)
                      (implicit c: StatsDClient): Sink[A] = {
-    counterSink[A](aspect, 1, tags: _*)
+    counterSink[A](aspect, sampleRate, 1, tags: _*)
   }
   
-  private[statsd] def sendMetrics[A](c: StatsDClient, prefix: String, extraTags: List[String], m: Metric[A])(value: A): Unit = {
+  private[statsd] def sendMetrics[A](c: StatsDClient, prefix: String, sampleRate: Double, extraTags: List[String], m: Metric[A])(value: A): Unit = {
     def fullAspectName(aspect: String) = if (prefix == null || prefix.isEmpty) aspect else prefix + "." + aspect
     
     val tags = extraTags ++ m.tags(value)
     m.values(value).foreach {
       case IntegralGauge(aspect, v) =>
-        c.gauge(fullAspectName(aspect), v, tags: _*)
+        c.gauge(fullAspectName(aspect), v, sampleRate, tags: _*)
       
       case FractionalGauge(aspect, v) =>
-        c.gauge(fullAspectName(aspect), v, tags: _*)
+        c.gauge(fullAspectName(aspect), v, sampleRate, tags: _*)
       
       case IntegralHistogram(aspect, v) =>
-        c.histogram(fullAspectName(aspect), v, tags: _*)
+        c.histogram(fullAspectName(aspect), v, sampleRate, tags: _*)
       
       case FractionalHistogram(aspect, v) =>
-        c.histogram(fullAspectName(aspect), v, tags: _*)
+        c.histogram(fullAspectName(aspect), v, sampleRate, tags: _*)
       
       case Counter(aspect, v) =>
-        c.count(fullAspectName(aspect), v, tags: _*)
+        c.count(fullAspectName(aspect), v, sampleRate, tags: _*)
 
       case Timer(aspect, v) =>
-        c.time(fullAspectName(aspect), v.toMillis, tags: _*)
+        c.time(fullAspectName(aspect), v.toMillis, sampleRate, tags: _*)
     }
   }
 }
