@@ -4,16 +4,12 @@ import com.timgroup.statsd.*;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.nio.ByteBuffer;
 import java.nio.channels.DatagramChannel;
-import java.nio.charset.Charset;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.text.NumberFormat;
 import java.util.Locale;
 import java.util.concurrent.*;
-
-
 
 /**
  * A simple StatsD client implementation facilitating metrics recording.
@@ -44,6 +40,7 @@ import java.util.concurrent.*;
  *
  */
 public final class PicoStatsDClient implements StatsDClient {
+    private final InternalStatsdClient client;
 
     private static final int PACKET_SIZE_BYTES = 1400;
 
@@ -93,8 +90,6 @@ public final class PicoStatsDClient implements StatsDClient {
             return result;
         }
     });
-
-    private final BlockingQueue<String> queue;
 
     /**
      * Create a new StatsD client communicating with a StatsD instance on the
@@ -280,8 +275,12 @@ public final class PicoStatsDClient implements StatsDClient {
      * @throws StatsDClientException
      *     if the client could not be started
      */
-    public PicoStatsDClient(final String prefix,  final int queueSize, String[] constantTags, final StatsDClientErrorHandler errorHandler,
-                            final Callable<InetSocketAddress> addressLookup) throws StatsDClientException {
+    public PicoStatsDClient(
+            final String prefix,
+            final int queueSize,
+            String[] constantTags,
+            final StatsDClientErrorHandler errorHandler,
+            final Callable<InetSocketAddress> addressLookup) throws StatsDClientException {
         if((prefix != null) && (!prefix.isEmpty())) {
             this.prefix = prefix + ".";
         } else {
@@ -310,8 +309,8 @@ public final class PicoStatsDClient implements StatsDClient {
         } catch (final Exception e) {
             throw new StatsDClientException("Failed to start StatsD client", e);
         }
-        queue = new LinkedBlockingQueue<String>(queueSize);
-        executor.submit(new QueueConsumer(addressLookup));
+
+        client = new InternalStatsdClient(queueSize, errorHandler, addressLookup);
     }
 
     /**
@@ -360,7 +359,7 @@ public final class PicoStatsDClient implements StatsDClient {
      */
     @Override
     public void count(final String aspect, final long delta, final String... tags) {
-        send(prefix + aspect + ":" + delta + "|c" + tagString(tags));
+        client.send(prefix + aspect + ":" + delta + "|c" + tagString(tags));
     }
 
     /**
@@ -372,7 +371,7 @@ public final class PicoStatsDClient implements StatsDClient {
             return;
         }
 
-        send(prefix + aspect + ":" + delta + "|c|@" + sampleRate + tagString(tags));
+        client.send(prefix + aspect + ":" + delta + "|c|@" + sampleRate + tagString(tags));
     }
 
     /**
@@ -469,7 +468,7 @@ public final class PicoStatsDClient implements StatsDClient {
     public void recordGaugeValue(final String aspect, final double value, final String... tags) {
         /* Intentionally using %s rather than %f here to avoid
          * padding with extra 0s to represent precision */
-        send(prefix + aspect + ":" + NUMBER_FORMATTERS.get().format(value) +  "|g" + tagString(tags));
+        client.send(prefix + aspect + ":" + NUMBER_FORMATTERS.get().format(value) +  "|g" + tagString(tags));
     }
 
     /**
@@ -481,7 +480,7 @@ public final class PicoStatsDClient implements StatsDClient {
             return;
         }
 
-        send(prefix + aspect + ":" + NUMBER_FORMATTERS.get().format(value) + "|g|@" + sampleRate + tagString(tags));
+        client.send(prefix + aspect + ":" + NUMBER_FORMATTERS.get().format(value) + "|g|@" + sampleRate + tagString(tags));
     }
 
     /**
@@ -515,7 +514,7 @@ public final class PicoStatsDClient implements StatsDClient {
      */
     @Override
     public void recordGaugeValue(final String aspect, final long value, final String... tags) {
-        send(prefix + aspect + ":" + value + "|g" + tagString(tags));
+        client.send(prefix + aspect + ":" + value + "|g" + tagString(tags));
     }
 
     /**
@@ -527,7 +526,7 @@ public final class PicoStatsDClient implements StatsDClient {
             return;
         }
 
-        send(prefix + aspect + ":" + value + "|g|@" + sampleRate + tagString(tags));
+        client.send(prefix + aspect + ":" + value + "|g|@" + sampleRate + tagString(tags));
     }
 
     /**
@@ -560,7 +559,7 @@ public final class PicoStatsDClient implements StatsDClient {
      */
     @Override
     public void recordExecutionTime(final String aspect, final long timeInMs, final String... tags) {
-        send(prefix + aspect + ":" + timeInMs + "|ms" + tagString(tags));
+        client.send(prefix + aspect + ":" + timeInMs + "|ms" + tagString(tags));
     }
 
     /**
@@ -572,7 +571,7 @@ public final class PicoStatsDClient implements StatsDClient {
             return;
         }
 
-        send(prefix + aspect + ":" + timeInMs + "|ms|@" + sampleRate + tagString(tags));
+        client.send(prefix + aspect + ":" + timeInMs + "|ms|@" + sampleRate + tagString(tags));
     }
 
     /**
@@ -607,7 +606,7 @@ public final class PicoStatsDClient implements StatsDClient {
     public void recordHistogramValue(final String aspect, final double value, final String... tags) {
         /* Intentionally using %s rather than %f here to avoid
          * padding with extra 0s to represent precision */
-        send(prefix + aspect + ":" + NUMBER_FORMATTERS.get().format(value) + "|h" + tagString(tags));
+        client.send(prefix + aspect + ":" + NUMBER_FORMATTERS.get().format(value) + "|h" + tagString(tags));
     }
 
     /**
@@ -621,7 +620,7 @@ public final class PicoStatsDClient implements StatsDClient {
 
         // Intentionally using %s rather than %f here to avoid
         // padding with extra 0s to represent precision
-        send(prefix + aspect + ":" + NUMBER_FORMATTERS.get().format(value) + "|h|@" + sampleRate + tagString(tags));
+        client.send(prefix + aspect + ":" + NUMBER_FORMATTERS.get().format(value) + "|h|@" + sampleRate + tagString(tags));
     }
 
     /**
@@ -654,7 +653,7 @@ public final class PicoStatsDClient implements StatsDClient {
      */
     @Override
     public void recordHistogramValue(final String aspect, final long value, final String... tags) {
-        send(prefix + aspect + ":" + value + "|h" + tagString(tags));
+        client.send(prefix + aspect + ":" + value + "|h" + tagString(tags));
     }
 
     /**
@@ -666,7 +665,7 @@ public final class PicoStatsDClient implements StatsDClient {
             return;
         }
 
-        send(prefix + aspect + ":" + value + "|h|@" + sampleRate + tagString(tags));
+        client.send(prefix + aspect + ":" + value + "|h|@" + sampleRate + tagString(tags));
     }
 
     /**
@@ -734,7 +733,7 @@ public final class PicoStatsDClient implements StatsDClient {
     public void recordEvent(final Event event, final String... tags) {
         final String title = escapeEventString(prefix + event.getTitle());
         final String text = escapeEventString(event.getText());
-        send("_e{" + title.length() + "," + text.length() + "}:" + title + "|" + text + eventMap(event) + tagString(tags));
+        client.send("_e{" + title.length() + "," + text.length() + "}:" + title + "|" + text + eventMap(event) + tagString(tags));
     }
 
     private String escapeEventString(final String title) {
@@ -753,7 +752,7 @@ public final class PicoStatsDClient implements StatsDClient {
      */
     @Override
     public void recordServiceCheckRun(final ServiceCheck sc) {
-        send(toStatsDString(sc));
+        client.send(toStatsDString(sc));
     }
 
     private String toStatsDString(final ServiceCheck sc) {
@@ -816,72 +815,10 @@ public final class PicoStatsDClient implements StatsDClient {
     public void recordSetValue(final String aspect, final String value, final String... tags) {
         // documentation is light, but looking at dogstatsd source, we can send string values
         // here instead of numbers
-        send(prefix + aspect + ":" + value + "|s" + tagString(tags));
-    }
-
-    private void send(final String message) {
-        queue.offer(message);
+        client.send(prefix + aspect + ":" + value + "|s" + tagString(tags));
     }
 
     private boolean isInvalidSample(double sampleRate) {
         return sampleRate != 1 && Math.random() > sampleRate;
-    }
-
-    public static final Charset MESSAGE_CHARSET = Charset.forName("UTF-8");
-
-
-    private class QueueConsumer implements Runnable {
-        private final ByteBuffer sendBuffer = ByteBuffer.allocate(PACKET_SIZE_BYTES);
-
-        private final Callable<InetSocketAddress> addressLookup;
-
-        QueueConsumer(final Callable<InetSocketAddress> addressLookup) {
-            this.addressLookup = addressLookup;
-        }
-
-        @Override public void run() {
-            while(!executor.isShutdown()) {
-                try {
-                    final String message = queue.poll(1, TimeUnit.SECONDS);
-                    if(null != message) {
-                        final InetSocketAddress address = addressLookup.call();
-                        final byte[] data = message.getBytes(MESSAGE_CHARSET);
-                        if(sendBuffer.remaining() < (data.length + 1)) {
-                            blockingSend(address);
-                        }
-                        if(sendBuffer.position() > 0) {
-                            sendBuffer.put( (byte) '\n');
-                        }
-                        sendBuffer.put(data);
-                        if(null == queue.peek()) {
-                            blockingSend(address);
-                        }
-                    }
-                } catch (final Exception e) {
-                    handler.handle(e);
-                }
-            }
-        }
-
-        private void blockingSend(final InetSocketAddress address) throws IOException {
-            final int sizeOfBuffer = sendBuffer.position();
-            sendBuffer.flip();
-
-            final int sentBytes = clientChannel.send(sendBuffer, address);
-            sendBuffer.limit(sendBuffer.capacity());
-            sendBuffer.rewind();
-
-            if (sizeOfBuffer != sentBytes) {
-                handler.handle(
-                        new IOException(
-                                String.format(
-                                        "Could not send entirely stat %s to host %s:%d. Only sent %d bytes out of %d bytes",
-                                        sendBuffer.toString(),
-                                        address.getHostName(),
-                                        address.getPort(),
-                                        sentBytes,
-                                        sizeOfBuffer)));
-            }
-        }
     }
 }
