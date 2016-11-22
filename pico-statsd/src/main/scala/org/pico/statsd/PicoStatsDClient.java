@@ -285,7 +285,7 @@ public final class PicoStatsDClient implements StatsDClient {
     public PicoStatsDClient(final String prefix,  final int queueSize, String[] constantTags, final StatsDClientErrorHandler errorHandler,
                             final Callable<InetSocketAddress> addressLookup) throws StatsDClientException {
         if((prefix != null) && (!prefix.isEmpty())) {
-            this.prefix = "%s." + prefix;
+            this.prefix = prefix + ".";
         } else {
             this.prefix = "";
         }
