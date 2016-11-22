@@ -3,9 +3,7 @@ package org.pico.statsd;
 import com.timgroup.statsd.*;
 
 import java.io.IOException;
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.nio.channels.DatagramChannel;
 import java.nio.charset.Charset;
@@ -224,7 +222,7 @@ public final class PicoStatsDClient implements StatsDClient {
      */
     public PicoStatsDClient(final String prefix, final String hostname, final int port,
                             final String[] constantTags, final StatsDClientErrorHandler errorHandler) throws StatsDClientException {
-        this(prefix, Integer.MAX_VALUE, constantTags, errorHandler, staticStatsDAddressResolution(hostname, port));
+        this(prefix, Integer.MAX_VALUE, constantTags, errorHandler, Inet.staticStatsDAddressResolution(hostname, port));
     }
 
     /**
@@ -255,7 +253,7 @@ public final class PicoStatsDClient implements StatsDClient {
      */
     public PicoStatsDClient(final String prefix, final String hostname, final int port, final int queueSize,
                             final String[] constantTags, final StatsDClientErrorHandler errorHandler) throws StatsDClientException {
-        this(prefix, queueSize, constantTags, errorHandler, staticStatsDAddressResolution(hostname, port));
+        this(prefix, queueSize, constantTags, errorHandler, Inet.staticStatsDAddressResolution(hostname, port));
     }
 
     /**
@@ -884,46 +882,6 @@ public final class PicoStatsDClient implements StatsDClient {
                                         sentBytes,
                                         sizeOfBuffer)));
             }
-        }
-    }
-
-    /**
-     * Create dynamic lookup for the given host name and port.
-     *
-     * @param hostname the host name of the targeted StatsD server
-     * @param port     the port of the targeted StatsD server
-     * @return a function to perform the lookup
-     */
-    public static Callable<InetSocketAddress> volatileAddressResolution(final String hostname, final int port) {
-        return new Callable<InetSocketAddress>() {
-            @Override public InetSocketAddress call() throws UnknownHostException {
-                return new InetSocketAddress(InetAddress.getByName(hostname), port);
-            }
-        };
-    }
-
-    /**
-     * Lookup the address for the given host name and cache the result.
-     *
-     * @param hostname the host name of the targeted StatsD server
-     * @param port     the port of the targeted StatsD server
-     * @return a function that cached the result of the lookup
-     * @throws Exception if the lookup fails, i.e. {@link UnknownHostException}
-     */
-    public static Callable<InetSocketAddress> staticAddressResolution(final String hostname, final int port) throws Exception {
-        final InetSocketAddress address = volatileAddressResolution(hostname, port).call();
-        return new Callable<InetSocketAddress>() {
-            @Override public InetSocketAddress call() {
-                return address;
-            }
-        };
-    }
-
-    private static Callable<InetSocketAddress> staticStatsDAddressResolution(final String hostname, final int port) throws StatsDClientException {
-        try {
-            return staticAddressResolution(hostname, port);
-        } catch (final Exception e) {
-            throw new StatsDClientException("Failed to lookup StatsD host", e);
         }
     }
 }
