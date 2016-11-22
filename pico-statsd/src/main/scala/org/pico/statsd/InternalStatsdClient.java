@@ -1,6 +1,5 @@
 package org.pico.statsd;
 
-import com.timgroup.statsd.Event;
 import com.timgroup.statsd.StatsDClientErrorHandler;
 import com.timgroup.statsd.StatsDClientException;
 
@@ -117,47 +116,11 @@ public final class InternalStatsdClient {
         }
     }
 
-//    private static String eventMap(final Event event) {
-//        final StringBuilder res = new StringBuilder("");
-//
-//        final long millisSinceEpoch = event.getMillisSinceEpoch();
-//        if (millisSinceEpoch != -1) {
-//            res.append("|d:").append(millisSinceEpoch / 1000);
-//        }
-//
-//        final String hostname = event.getHostname();
-//        if (hostname != null) {
-//            res.append("|h:").append(hostname);
-//        }
-//
-//        final String aggregationKey = event.getAggregationKey();
-//        if (aggregationKey != null) {
-//            res.append("|k:").append(aggregationKey);
-//        }
-//
-//        final String priority = event.getPriority();
-//        if (priority != null) {
-//            res.append("|p:").append(priority);
-//        }
-//
-//        final String alertType = event.getAlertType();
-//        if (alertType != null) {
-//            res.append("|t:").append(alertType);
-//        }
-//
-//        return res.toString();
-//    }
-
     public void send(final String message) {
         queue.offer(message);
     }
 
-    private boolean isInvalidSample(double sampleRate) {
-        return sampleRate != 1 && Math.random() > sampleRate;
-    }
-
     public static final Charset MESSAGE_CHARSET = Charset.forName("UTF-8");
-
 
     private class QueueConsumer implements Runnable {
         private final ByteBuffer sendBuffer = ByteBuffer.allocate(PACKET_SIZE_BYTES);
