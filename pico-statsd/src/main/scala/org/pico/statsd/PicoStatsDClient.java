@@ -13,13 +13,7 @@ import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.text.NumberFormat;
 import java.util.Locale;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
 
 
@@ -48,7 +42,7 @@ import java.util.concurrent.TimeUnit;
  * <p>As part of a clean system shutdown, the {@link #stop()} method should be invoked
  * on any StatsD clients.</p>
  *
- * @author Tom Denley
+ * @author Tom Denley, John Ky
  *
  */
 public final class PicoStatsDClient implements StatsDClient {
@@ -229,7 +223,7 @@ public final class PicoStatsDClient implements StatsDClient {
      *     if the client could not be started
      */
     public PicoStatsDClient(final String prefix, final String hostname, final int port,
-                                   final String[] constantTags, final StatsDClientErrorHandler errorHandler) throws StatsDClientException {
+                            final String[] constantTags, final StatsDClientErrorHandler errorHandler) throws StatsDClientException {
         this(prefix, Integer.MAX_VALUE, constantTags, errorHandler, staticStatsDAddressResolution(hostname, port));
     }
 
@@ -260,7 +254,7 @@ public final class PicoStatsDClient implements StatsDClient {
      *     if the client could not be started
      */
     public PicoStatsDClient(final String prefix, final String hostname, final int port, final int queueSize,
-                                   final String[] constantTags, final StatsDClientErrorHandler errorHandler) throws StatsDClientException {
+                            final String[] constantTags, final StatsDClientErrorHandler errorHandler) throws StatsDClientException {
         this(prefix, queueSize, constantTags, errorHandler, staticStatsDAddressResolution(hostname, port));
     }
 
@@ -289,9 +283,9 @@ public final class PicoStatsDClient implements StatsDClient {
      *     if the client could not be started
      */
     public PicoStatsDClient(final String prefix,  final int queueSize, String[] constantTags, final StatsDClientErrorHandler errorHandler,
-                                   final Callable<InetSocketAddress> addressLookup) throws StatsDClientException {
+                            final Callable<InetSocketAddress> addressLookup) throws StatsDClientException {
         if((prefix != null) && (!prefix.isEmpty())) {
-            this.prefix = String.format("%s.", prefix);
+            this.prefix = "%s." + prefix;
         } else {
             this.prefix = "";
         }
@@ -377,7 +371,7 @@ public final class PicoStatsDClient implements StatsDClient {
     /**
      * Generate a suffix conveying the given tag list to the client
      */
-    String tagString(final String[] tags) {
+    private String tagString(final String[] tags) {
         return tagString(tags, constantTagsRendered);
     }
 
@@ -395,7 +389,7 @@ public final class PicoStatsDClient implements StatsDClient {
      */
     @Override
     public void count(final String aspect, final long delta, final String... tags) {
-        send(String.format("%s%s:%d|c%s", prefix, aspect, delta, tagString(tags)));
+        send(prefix + aspect + ":" + delta + "|c" + tagString(tags));
     }
 
     /**
@@ -406,7 +400,8 @@ public final class PicoStatsDClient implements StatsDClient {
         if(isInvalidSample(sampleRate)) {
             return;
         }
-        send(String.format("%s%s:%d|c|@%f%s", prefix, aspect, delta, sampleRate, tagString(tags)));
+
+        send(prefix + aspect + ":" + delta + "|c|@" + sampleRate + tagString(tags));
     }
 
     /**
@@ -503,7 +498,7 @@ public final class PicoStatsDClient implements StatsDClient {
     public void recordGaugeValue(final String aspect, final double value, final String... tags) {
         /* Intentionally using %s rather than %f here to avoid
          * padding with extra 0s to represent precision */
-        send(String.format("%s%s:%s|g%s", prefix, aspect, NUMBER_FORMATTERS.get().format(value), tagString(tags)));
+        send(prefix + aspect + ":" + NUMBER_FORMATTERS.get().format(value) +  "|g" + tagString(tags));
     }
 
     /**
@@ -514,7 +509,8 @@ public final class PicoStatsDClient implements StatsDClient {
         if(isInvalidSample(sampleRate)) {
             return;
         }
-        send(String.format("%s%s:%s|g|@%f%s", prefix, aspect, NUMBER_FORMATTERS.get().format(value), sampleRate, tagString(tags)));
+
+        send(prefix + aspect + ":" + NUMBER_FORMATTERS.get().format(value) + "|g|@" + sampleRate + tagString(tags));
     }
 
     /**
@@ -548,7 +544,7 @@ public final class PicoStatsDClient implements StatsDClient {
      */
     @Override
     public void recordGaugeValue(final String aspect, final long value, final String... tags) {
-        send(String.format("%s%s:%d|g%s", prefix, aspect, value, tagString(tags)));
+        send(prefix + aspect + ":" + value + "|g" + tagString(tags));
     }
 
     /**
@@ -559,7 +555,8 @@ public final class PicoStatsDClient implements StatsDClient {
         if(isInvalidSample(sampleRate)) {
             return;
         }
-        send(String.format("%s%s:%d|g|@%f%s", prefix, aspect, value, sampleRate, tagString(tags)));
+
+        send(prefix + aspect + ":" + value + "|g|@" + sampleRate + tagString(tags));
     }
 
     /**
@@ -592,7 +589,7 @@ public final class PicoStatsDClient implements StatsDClient {
      */
     @Override
     public void recordExecutionTime(final String aspect, final long timeInMs, final String... tags) {
-        send(String.format("%s%s:%d|ms%s", prefix, aspect, timeInMs, tagString(tags)));
+        send(prefix + aspect + ":" + timeInMs + "|ms" + tagString(tags));
     }
 
     /**
@@ -603,7 +600,8 @@ public final class PicoStatsDClient implements StatsDClient {
         if(isInvalidSample(sampleRate)) {
             return;
         }
-        send(String.format("%s%s:%d|ms|@%f%s", prefix, aspect, timeInMs, sampleRate, tagString(tags)));
+
+        send(prefix + aspect + ":" + timeInMs + "|ms|@" + sampleRate + tagString(tags));
     }
 
     /**
@@ -638,7 +636,7 @@ public final class PicoStatsDClient implements StatsDClient {
     public void recordHistogramValue(final String aspect, final double value, final String... tags) {
         /* Intentionally using %s rather than %f here to avoid
          * padding with extra 0s to represent precision */
-        send(String.format("%s%s:%s|h%s", prefix, aspect, NUMBER_FORMATTERS.get().format(value), tagString(tags)));
+        send(prefix + aspect + ":" + NUMBER_FORMATTERS.get().format(value) + "|h" + tagString(tags));
     }
 
     /**
@@ -649,9 +647,10 @@ public final class PicoStatsDClient implements StatsDClient {
         if(isInvalidSample(sampleRate)) {
             return;
         }
-    	  /* Intentionally using %s rather than %f here to avoid
-    	   * padding with extra 0s to represent precision */
-        send(String.format("%s%s:%s|h|@%f%s", prefix, aspect, NUMBER_FORMATTERS.get().format(value), sampleRate, tagString(tags)));
+
+        // Intentionally using %s rather than %f here to avoid
+        // padding with extra 0s to represent precision
+        send(prefix + aspect + ":" + NUMBER_FORMATTERS.get().format(value) + "|h|@" + sampleRate + tagString(tags));
     }
 
     /**
@@ -684,7 +683,7 @@ public final class PicoStatsDClient implements StatsDClient {
      */
     @Override
     public void recordHistogramValue(final String aspect, final long value, final String... tags) {
-        send(String.format("%s%s:%d|h%s", prefix, aspect, value, tagString(tags)));
+        send(prefix + aspect + ":" + value + "|h" + tagString(tags));
     }
 
     /**
@@ -695,7 +694,8 @@ public final class PicoStatsDClient implements StatsDClient {
         if(isInvalidSample(sampleRate)) {
             return;
         }
-        send(String.format("%s%s:%d|h|@%f%s", prefix, aspect, value, sampleRate, tagString(tags)));
+
+        send(prefix + aspect + ":" + value + "|h|@" + sampleRate + tagString(tags));
     }
 
     /**
@@ -763,8 +763,7 @@ public final class PicoStatsDClient implements StatsDClient {
     public void recordEvent(final Event event, final String... tags) {
         final String title = escapeEventString(prefix + event.getTitle());
         final String text = escapeEventString(event.getText());
-        send(String.format("_e{%d,%d}:%s|%s%s%s",
-                title.length(), text.length(), title, text, eventMap(event), tagString(tags)));
+        send("_e{" + title.length() + "," + text.length() + "}:" + title + "|" + text + eventMap(event) + tagString(tags));
     }
 
     private String escapeEventString(final String title) {
@@ -789,17 +788,28 @@ public final class PicoStatsDClient implements StatsDClient {
     private String toStatsDString(final ServiceCheck sc) {
         // see http://docs.datadoghq.com/guides/dogstatsd/#service-checks
         final StringBuilder sb = new StringBuilder();
-        sb.append(String.format("_sc|%s|%d", sc.getName(), sc.getStatus()));
+        sb.append("_sc|");
+        sb.append(sc.getName());
+        sb.append("|");
+        sb.append(sc.getStatus());
+
         if (sc.getTimestamp() > 0) {
-            sb.append(String.format("|d:%d", sc.getTimestamp()));
+            sb.append("|d:");
+            sb.append(sc.getTimestamp());
         }
+
         if (sc.getHostname() != null) {
-            sb.append(String.format("|h:%s", sc.getHostname()));
+            sb.append("|h:");
+            sb.append(sc.getHostname());
         }
+
         sb.append(tagString(sc.getTags()));
+
         if (sc.getMessage() != null) {
-            sb.append(String.format("|m:%s", sc.getEscapedMessage()));
+            sb.append("|m:");
+            sb.append(sc.getEscapedMessage());
         }
+
         return sb.toString();
     }
 
@@ -835,7 +845,7 @@ public final class PicoStatsDClient implements StatsDClient {
     public void recordSetValue(final String aspect, final String value, final String... tags) {
         // documentation is light, but looking at dogstatsd source, we can send string values
         // here instead of numbers
-        send(String.format("%s%s:%s|s%s", prefix, aspect, value, tagString(tags)));
+        send(prefix + aspect + ":" + value + "|s" + tagString(tags));
     }
 
     private void send(final String message) {
