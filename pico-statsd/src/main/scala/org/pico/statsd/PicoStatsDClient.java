@@ -2,14 +2,12 @@ package org.pico.statsd;
 
 import com.timgroup.statsd.*;
 
-import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.nio.channels.DatagramChannel;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.text.NumberFormat;
 import java.util.Locale;
-import java.util.concurrent.*;
+import java.util.concurrent.Callable;
 
 /**
  * A simple StatsD client implementation facilitating metrics recording.
@@ -42,12 +40,6 @@ import java.util.concurrent.*;
 public final class PicoStatsDClient implements StatsDClient {
     private final InternalStatsdClient client;
 
-    private static final int PACKET_SIZE_BYTES = 1400;
-
-    private static final StatsDClientErrorHandler NO_OP_HANDLER = new StatsDClientErrorHandler() {
-        @Override public void handle(final Exception e) { /* No-op */ }
-    };
-
     /**
      * Because NumberFormat is not thread-safe we cannot share instances across threads. Use a ThreadLocal to
      * create one pre thread as this seems to offer a significant performance improvement over creating one per-thread:
@@ -57,7 +49,6 @@ public final class PicoStatsDClient implements StatsDClient {
     private static final ThreadLocal<NumberFormat> NUMBER_FORMATTERS = new ThreadLocal<NumberFormat>() {
         @Override
         protected NumberFormat initialValue() {
-
             // Always create the formatter for the US locale in order to avoid this bug:
             // https://github.com/indeedeng/java-dogstatsd-client/issues/3
             final NumberFormat numberFormatter = NumberFormat.getInstance(Locale.US);
@@ -77,19 +68,7 @@ public final class PicoStatsDClient implements StatsDClient {
     };
 
     private final String prefix;
-    private final DatagramChannel clientChannel;
-    private final StatsDClientErrorHandler handler;
     private final String constantTagsRendered;
-
-    private final ExecutorService executor = Executors.newSingleThreadExecutor(new ThreadFactory() {
-        final ThreadFactory delegate = Executors.defaultThreadFactory();
-        @Override public Thread newThread(final Runnable r) {
-            final Thread result = delegate.newThread(r);
-            result.setName("StatsD-" + result.getName());
-            result.setDaemon(true);
-            return result;
-        }
-    });
 
     /**
      * Create a new StatsD client communicating with a StatsD instance on the
@@ -281,19 +260,13 @@ public final class PicoStatsDClient implements StatsDClient {
             String[] constantTags,
             final StatsDClientErrorHandler errorHandler,
             final Callable<InetSocketAddress> addressLookup) throws StatsDClientException {
-        if((prefix != null) && (!prefix.isEmpty())) {
+        if ((prefix != null) && (!prefix.isEmpty())) {
             this.prefix = prefix + ".";
         } else {
             this.prefix = "";
         }
-        if(errorHandler == null) {
-            handler = NO_OP_HANDLER;
-        }
-        else {
-            handler = errorHandler;
-        }
 
-        /* Empty list should be null for faster comparison */
+        // Empty list should be null for faster comparison
         if((constantTags != null) && (constantTags.length == 0)) {
             constantTags = null;
         }
@@ -302,12 +275,6 @@ public final class PicoStatsDClient implements StatsDClient {
             constantTagsRendered = Tags.tagString(constantTags, null);
         } else {
             constantTagsRendered = null;
-        }
-
-        try {
-            clientChannel = DatagramChannel.open();
-        } catch (final Exception e) {
-            throw new StatsDClientException("Failed to start StatsD client", e);
         }
 
         client = new InternalStatsdClient(queueSize, errorHandler, addressLookup);
@@ -319,23 +286,7 @@ public final class PicoStatsDClient implements StatsDClient {
      */
     @Override
     public void stop() {
-        try {
-            executor.shutdown();
-            executor.awaitTermination(30, TimeUnit.SECONDS);
-        }
-        catch (final Exception e) {
-            handler.handle(e);
-        }
-        finally {
-            if (clientChannel != null) {
-                try {
-                    clientChannel.close();
-                }
-                catch (final IOException e) {
-                    handler.handle(e);
-                }
-            }
-        }
+        client.stop();
     }
 
     /**
