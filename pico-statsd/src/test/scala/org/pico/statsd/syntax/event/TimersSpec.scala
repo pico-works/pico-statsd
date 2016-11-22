@@ -8,7 +8,7 @@ class TimersSpec extends Specification {
   implicit val statsd = new NoOpStatsDClient()
   "Ensuring messages go through" >> {
     "with SinkSource" in {
-      val bus = Bus[Int].withSimpleTimer("bus.test")
+      val bus = Bus[Int].withSimpleTimer("bus.test", None)
       val sum = bus.foldRight(0)(_ + _)
       
       (1 to 10 ).foreach(bus.publish)
@@ -18,7 +18,7 @@ class TimersSpec extends Specification {
   
     "with Source" in {
       val bus = Bus[Int]
-      val sum = bus.map(x => x + 1).withSimpleTimer("bus.test").foldRight(0)(_ + _)
+      val sum = bus.map(x => x + 1).withSimpleTimer("bus.test", None).foldRight(0)(_ + _)
     
       (1 to 10 ).foreach(bus.publish)
     
