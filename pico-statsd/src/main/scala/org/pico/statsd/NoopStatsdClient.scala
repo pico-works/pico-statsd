@@ -383,5 +383,5 @@ object NoopStatsdClient extends StatsdClient {
     */
   override def recordSetValue(aspect: String, value: String, tags: String*): Unit = ()
 
-  override def sendMetrics[A](prefix: String, sampleRate: SampleRate, extraTags: List[String], m: Metric[A])(value: A): Unit = ()
+  override def sendMetrics[A](prefix: String, sampleRate: SampleRate, extraTags: Seq[String], m: Metric[A])(value: A): Unit = ()
 }

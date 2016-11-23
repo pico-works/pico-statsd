@@ -398,5 +398,5 @@ trait StatsdClient {
     */
   def recordSetValue(aspect: String, value: String, tags: String*): Unit
 
-  def sendMetrics[A](prefix: String, sampleRate: SampleRate, extraTags: List[String], m: Metric[A])(value: A): Unit
+  def sendMetrics[A](prefix: String, sampleRate: SampleRate, extraTags: Seq[String], m: Metric[A])(value: A): Unit
 }

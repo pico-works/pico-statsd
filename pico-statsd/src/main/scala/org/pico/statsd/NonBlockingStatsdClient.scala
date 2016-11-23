@@ -715,7 +715,7 @@ final class NonBlockingStatsdClient(
     client.send(sb.toString)
   }
 
-  def sendMetrics[A](prefix: String, sampleRate: SampleRate, extraTags: List[String], m: Metric[A])(value: A): Unit = {
+  def sendMetrics[A](prefix: String, sampleRate: SampleRate, extraTags: Seq[String], m: Metric[A])(value: A): Unit = {
     def fullAspectName(aspect: String) = if (prefix == null || prefix.isEmpty) aspect else prefix + "." + aspect
 
     val tags = extraTags ++ m.tags(value)
