@@ -250,6 +250,7 @@ final class NonBlockingStatsdClient(
 
     // TODO: Write more tags
     DataPointWritable.of[D].write(out, prefix, aspect, sampleRate, d) { tagWriter =>
+      constantTags.foreach(tagWriter.writeTag)
       tags.foreach(tagWriter.writeTag)
     }
 

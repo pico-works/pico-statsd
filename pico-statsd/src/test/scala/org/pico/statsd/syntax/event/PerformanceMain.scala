@@ -14,7 +14,7 @@ object PerformanceMain {
 
       val bus = Bus[Unit]
 
-      bus.withCounter("consumer.record.count", SampleRate.always)
+      bus.withCounter("consumer.record.count", SampleRate.always, "helloworld")
 
       val before = Deadline.now
 
