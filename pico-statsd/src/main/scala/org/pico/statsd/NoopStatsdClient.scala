@@ -1,4 +1,5 @@
 package org.pico.statsd
+
 import com.timgroup.statsd.{Event, ServiceCheck}
 
 object NoopStatsdClient extends StatsdClient {
@@ -381,4 +382,6 @@ object NoopStatsdClient extends StatsdClient {
     * @see <a href="http://docs.datadoghq.com/guides/dogstatsd/#sets">http://docs.datadoghq.com/guides/dogstatsd/#sets</a>
     */
   override def recordSetValue(aspect: String, value: String, tags: String*): Unit = ()
+
+  override def sendMetrics[A](prefix: String, sampleRate: SampleRate, extraTags: List[String], m: Metric[A])(value: A): Unit = ()
 }

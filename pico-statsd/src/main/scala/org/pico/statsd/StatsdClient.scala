@@ -397,4 +397,6 @@ trait StatsdClient {
     * @see <a href="http://docs.datadoghq.com/guides/dogstatsd/#sets">http://docs.datadoghq.com/guides/dogstatsd/#sets</a>
     */
   def recordSetValue(aspect: String, value: String, tags: String*): Unit
+
+  def sendMetrics[A](prefix: String, sampleRate: SampleRate, extraTags: List[String], m: Metric[A])(value: A): Unit
 }
