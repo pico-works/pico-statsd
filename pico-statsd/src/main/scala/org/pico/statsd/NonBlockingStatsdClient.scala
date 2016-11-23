@@ -6,7 +6,7 @@ import java.text.DecimalFormat
 import java.util.concurrent.Callable
 
 import com.timgroup.statsd._
-import org.pico.statsd.datapoint.{DataPointWritable, Sampleable, Sampling}
+import org.pico.statsd.datapoint.{DataPointWritable, Sampleable, Sampler, Sampling}
 
 /**
   * Create a new StatsD client communicating with a StatsD instance on the
@@ -288,28 +288,13 @@ final class NonBlockingStatsdClient(
     client.send(sb.toString)
   }
 
-//  def sendMetrics[A](prefix: String, sampleRate: SampleRate, extraTags: Seq[String], m: Metric[A])(value: A): Unit = {
-//    def fullAspectName(aspect: String) = if (prefix == null || prefix.isEmpty) aspect else prefix + "." + aspect
-//
-//    val tags = extraTags ++ m.tags(value)
-//
-//    m.values(value).foreach {
-//      case IntegralGauge(aspect, v) => ??? // gauge(fullAspectName(aspect), v, sampleRate, tags: _*)
-//      case FractionalGauge(aspect, v) => ??? // gauge(fullAspectName(aspect), v, sampleRate, tags: _*)
-//      case IntegralHistogram(aspect, v) => ??? // histogram(fullAspectName(aspect), v, sampleRate, tags: _*)
-//      case FractionalHistogram(aspect, v) => ??? // histogram(fullAspectName(aspect), v, sampleRate, tags: _*)
-//      case Counter(aspect, v) => ??? // count(fullAspectName(aspect), v, sampleRate, tags: _*)
-//      case Timer(aspect, v) => ??? // time(fullAspectName(aspect), v.toMillis, sampleRate, tags: _*)
-//    }
-//  }
-
   private def validSample(sampleRate: SampleRate): Boolean = {
     !(sampleRate.value != 1 && Math.random > sampleRate.value)
   }
 
-  override def sample[S: Sampleable: Sampling](s: S): Unit = {
+  override def sample[S: Sampler: Sampling](s: S): Unit = {
     if (validSample(Sampling.of[S].sampleRate(s))) {
-      Sampleable.of[S].sampleIn(this, s)
+      Sampler.of[S].sendIn(this, s)
     }
   }
 }

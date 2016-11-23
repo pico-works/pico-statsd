@@ -3,6 +3,7 @@ package org.pico.statsd.syntax.event
 import org.pico.disposal.{Auto, Disposable}
 import org.pico.event.Bus
 import org.pico.statsd._
+import org.pico.statsd.datapoint._
 
 import scala.concurrent.duration.Deadline
 
@@ -10,12 +11,19 @@ object MetricPerformanceMain {
   implicit val statsDClientDisposable = Disposable[StatsdClient](_.stop())
 
   case class Topic(name: String) extends AnyVal
+
   case class Record(topic: Topic, partition: Long, offset: Long)
 
-  implicit def consumedRecordMetric[A]: Metric[Record] =
-    Metric[Record](
-      r => List(IntegralGauge("offset", r.offset), Counter("record.count", 1)),
-      x => List("topic:" + x.topic.name, "partition:" + x.partition))
+//  implicit def consumedRecordMetric[A]: Metric[Record] =
+//    Metric[Record](
+//      r => List(IntegralGauge("offset", r.offset), Counter("record.count", 1)),
+//      x => List("topic:" + x.topic.name, "partition:" + x.partition))
+
+  implicit val samplerRecord = Sampler[Record](
+    IntegralGaugeSampler("offset").comap(_.offset),
+    IncrementSampler("record.count"),
+    TaggedBy(v => "topic:" + v.topic.name),
+    TaggedBy(v => "partition:" + v.partition))
 
   def main(args: Array[String]): Unit = {
     val record = Record(Topic("topic"), 1L, 1000L)
@@ -25,7 +33,7 @@ object MetricPerformanceMain {
 
       val bus = Bus[Record]
 
-      bus.withMetrics("consumer.record.count", None)
+      bus.withMetrics("consumer.record.count", SampleRate.always)
 
       val before = Deadline.now
 

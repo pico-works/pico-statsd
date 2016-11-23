@@ -1,7 +1,7 @@
 package org.pico
 
 import org.pico.event.Sink
-import org.pico.statsd.datapoint.{Count, SampleRated}
+import org.pico.statsd.datapoint.{Count, SampleRated, Sampler, Sampling}
 
 package object statsd {
   /**
@@ -14,14 +14,11 @@ package object statsd {
     Sink[A](a => f(c, a))
   }
   
-  def metricsSink[A](aspect: String, sampleRate: SampleRate, tags: String*)
+  def metricsSink[A: Sampler](aspect: String, sampleRate: SampleRate, tags: String*)
                     (implicit c: StatsdClient, m: Metric[A]): Sink[A] = {
-    Sink[A] { a =>
-//      c.sendMetrics(aspect, sampleRate, tags.toList, m)(a)
-      ???
-    }
+    implicit val sampling = Sampling[A](sampleRate)
+    Sink[A](c.sample[A])
   }
-  
   
   def counterSink[A](aspect: String, sampleRate: SampleRate, delta: Long, tags: String*)
                      (implicit c: StatsdClient): Sink[A] = {
