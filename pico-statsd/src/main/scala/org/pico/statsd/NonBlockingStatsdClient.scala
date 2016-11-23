@@ -7,6 +7,7 @@ import java.text.DecimalFormatSymbols
 import java.text.NumberFormat
 import java.util.Locale
 import java.util.concurrent.Callable
+import java.lang.{StringBuilder => JStringBuilder}
 
 /**
   * A simple StatsD client implementation facilitating metrics recording.
@@ -93,7 +94,7 @@ final class NonBlockingStatsdClient(
     val queueSize: Int,
     var constantTags: Array[String] = null,
     val errorHandler: StatsDClientErrorHandler,
-    val addressLookup: Callable[InetSocketAddress]) extends StatsDClient {
+    val addressLookup: Callable[InetSocketAddress]) extends StatsdClient {
   this.prefix = if ((prefix != null) && (!prefix.isEmpty)) {
     prefix + "."
   } else {
@@ -106,7 +107,7 @@ final class NonBlockingStatsdClient(
   }
 
   val constantTagsRendered = if (constantTags != null) {
-    val sb = new StringBuilder()
+    val sb = new JStringBuilder()
     Tags.appendTagString(sb, constantTags, null)
     sb.toString
   } else {
@@ -306,9 +307,11 @@ final class NonBlockingStatsdClient(
   /**
     * Generate a suffix conveying the given tag list to the client
     */
-  private def appendTagString(sb: StringBuilder, tags: Seq[String]): Unit = {
+  private def appendTagString(sb: JStringBuilder, tags: Seq[String]): Unit = {
     Tags.appendTagString(sb, tags, constantTagsRendered)
   }
+
+  val decimalFormat = new DecimalFormat("#.################")
 
   /**
     * Adjusts the specified counter by a given delta.
@@ -323,7 +326,7 @@ final class NonBlockingStatsdClient(
     * array of tags to be added to the data
     */
   override def count(aspect: String, delta: Long, tags: String*): Unit = {
-    val sb = new StringBuilder()
+    val sb = new JStringBuilder()
 
     sb.append(prefix)
     sb.append(aspect)
@@ -338,16 +341,16 @@ final class NonBlockingStatsdClient(
   /**
     * {@inheritDoc }
     */
-  override def count(aspect: String, delta: Long, sampleRate: Double, tags: String*): Unit = {
+  override def count(aspect: String, delta: Long, sampleRate: SampleRate, tags: String*): Unit = {
     if (validSample(sampleRate)) {
-      val sb = new StringBuilder()
+      val sb = new JStringBuilder(50)
 
       sb.append(prefix)
       sb.append(aspect)
       sb.append(":")
       sb.append(delta)
       sb.append("|c|@")
-      sb.append(sampleRate)
+      sb.append(sampleRate.text)
       appendTagString(sb, tags)
 
       client.send(sb.toString)
@@ -371,7 +374,7 @@ final class NonBlockingStatsdClient(
   /**
     * {@inheritDoc }
     */
-  override def incrementCounter(aspect: String, sampleRate: Double, tags: String*): Unit = {
+  override def incrementCounter(aspect: String, sampleRate: SampleRate, tags: String*): Unit = {
     count(aspect, 1L, sampleRate, tags: _*)
   }
 
@@ -385,7 +388,7 @@ final class NonBlockingStatsdClient(
   /**
     * {@inheritDoc }
     */
-  override def increment(aspect: String, sampleRate: Double, tags: String*): Unit = {
+  override def increment(aspect: String, sampleRate: SampleRate, tags: String*): Unit = {
     incrementCounter(aspect, sampleRate, tags: _*)
   }
 
@@ -406,7 +409,7 @@ final class NonBlockingStatsdClient(
   /**
     * {@inheritDoc }
     */
-  override def decrementCounter(aspect: String, sampleRate: Double, tags: String*): Unit = {
+  override def decrementCounter(aspect: String, sampleRate: SampleRate, tags: String*): Unit = {
     count(aspect, -1, sampleRate, tags: _*)
   }
 
@@ -420,7 +423,7 @@ final class NonBlockingStatsdClient(
   /**
     * {@inheritDoc }
     */
-  override def decrement(aspect: String, sampleRate: Double, tags: String*): Unit = {
+  override def decrement(aspect: String, sampleRate: SampleRate, tags: String*): Unit = {
     decrementCounter(aspect, sampleRate, tags: _*)
   }
 
@@ -440,7 +443,7 @@ final class NonBlockingStatsdClient(
     // Intentionally using %s rather than %f here to avoid padding with extra 0s to represent
     // precision
 
-    val sb = new StringBuilder()
+    val sb = new JStringBuilder()
     sb.append(prefix)
     sb.append(aspect)
     sb.append(":")
@@ -454,15 +457,15 @@ final class NonBlockingStatsdClient(
   /**
     * {@inheritDoc }
     */
-  override def recordGaugeValue(aspect: String, value: Double, sampleRate: Double, tags: String*): Unit = {
+  override def recordGaugeValue(aspect: String, value: Double, sampleRate: SampleRate, tags: String*): Unit = {
     if (validSample(sampleRate)) {
-      val sb = new StringBuilder()
+      val sb = new JStringBuilder()
       sb.append(prefix)
       sb.append(aspect)
       sb.append(":")
       sb.append(StatsdNumberFormat.get.format(value))
       sb.append("|g|@")
-      sb.append(sampleRate)
+      sb.append(sampleRate.text)
       appendTagString(sb, tags)
 
       client.send(sb.toString)
@@ -479,7 +482,7 @@ final class NonBlockingStatsdClient(
   /**
     * {@inheritDoc }
     */
-  override def gauge(aspect: String, value: Double, sampleRate: Double, tags: String*): Unit = {
+  override def gauge(aspect: String, value: Double, sampleRate: SampleRate, tags: String*): Unit = {
     recordGaugeValue(aspect, value, sampleRate, tags: _*)
   }
 
@@ -496,7 +499,7 @@ final class NonBlockingStatsdClient(
     * array of tags to be added to the data
     */
   override def recordGaugeValue(aspect: String, value: Long, tags: String*): Unit = {
-    val sb = new StringBuilder()
+    val sb = new JStringBuilder()
 
     sb.append(prefix)
     sb.append(aspect)
@@ -511,16 +514,16 @@ final class NonBlockingStatsdClient(
   /**
     * {@inheritDoc }
     */
-  override def recordGaugeValue(aspect: String, value: Long, sampleRate: Double, tags: String*): Unit = {
+  override def recordGaugeValue(aspect: String, value: Long, sampleRate: SampleRate, tags: String*): Unit = {
     if (validSample(sampleRate)) {
-      val sb = new StringBuilder()
+      val sb = new JStringBuilder()
 
       sb.append(prefix)
       sb.append(aspect)
       sb.append(":")
       sb.append(value)
       sb.append("|g|@")
-      sb.append(sampleRate)
+      sb.append(sampleRate.text)
       appendTagString(sb, tags)
 
       client.send(sb.toString)
@@ -537,7 +540,7 @@ final class NonBlockingStatsdClient(
   /**
     * {@inheritDoc }
     */
-  override def gauge(aspect: String, value: Long, sampleRate: Double, tags: String*): Unit = {
+  override def gauge(aspect: String, value: Long, sampleRate: SampleRate, tags: String*): Unit = {
     recordGaugeValue(aspect, value, sampleRate, tags: _*)
   }
 
@@ -554,7 +557,7 @@ final class NonBlockingStatsdClient(
     * array of tags to be added to the data
     */
   override def recordExecutionTime(aspect: String, timeInMs: Long, tags: String*): Unit = {
-    val sb = new StringBuilder()
+    val sb = new JStringBuilder()
 
     sb.append(prefix)
     sb.append(aspect)
@@ -569,15 +572,15 @@ final class NonBlockingStatsdClient(
   /**
     * {@inheritDoc }
     */
-  override def recordExecutionTime(aspect: String, timeInMs: Long, sampleRate: Double, tags: String*): Unit = {
+  override def recordExecutionTime(aspect: String, timeInMs: Long, sampleRate: SampleRate, tags: String*): Unit = {
     if (validSample(sampleRate)) {
-      val sb = new StringBuilder()
+      val sb = new JStringBuilder()
       sb.append(prefix)
       sb.append(aspect)
       sb.append(":")
       sb.append(timeInMs)
       sb.append("|ms|@")
-      sb.append(sampleRate)
+      sb.append(sampleRate.text)
       appendTagString(sb, tags)
       client.send(sb.toString)
     }
@@ -593,7 +596,7 @@ final class NonBlockingStatsdClient(
   /**
     * {@inheritDoc }
     */
-  override def time(aspect: String, value: Long, sampleRate: Double, tags: String*): Unit = {
+  override def time(aspect: String, value: Long, sampleRate: SampleRate, tags: String*): Unit = {
     recordExecutionTime(aspect, value, sampleRate, tags: _*)
   }
 
@@ -612,7 +615,7 @@ final class NonBlockingStatsdClient(
   override def recordHistogramValue(aspect: String, value: Double, tags: String*): Unit = {
     // Intentionally using %s rather than %f here to avoid
     // padding with extra 0s to represent precision
-    val sb = new StringBuilder()
+    val sb = new JStringBuilder()
 
     sb.append(prefix)
     sb.append(aspect)
@@ -627,18 +630,18 @@ final class NonBlockingStatsdClient(
   /**
     * {@inheritDoc }
     */
-  override def recordHistogramValue(aspect: String, value: Double, sampleRate: Double, tags: String*): Unit = {
+  override def recordHistogramValue(aspect: String, value: Double, sampleRate: SampleRate, tags: String*): Unit = {
     if (validSample(sampleRate)) {
       // Intentionally using %s rather than %f here to avoid
       // padding with extra 0s to represent precision
-      val sb = new StringBuilder()
+      val sb = new JStringBuilder()
 
       sb.append(prefix)
       sb.append(aspect)
       sb.append(":")
       sb.append(StatsdNumberFormat.get.format(value))
       sb.append("|h|@")
-      sb.append(sampleRate)
+      sb.append(sampleRate.text)
       appendTagString(sb, tags)
 
       client.send(sb.toString)
@@ -655,7 +658,7 @@ final class NonBlockingStatsdClient(
   /**
     * {@inheritDoc }
     */
-  override def histogram(aspect: String, value: Double, sampleRate: Double, tags: String*): Unit = {
+  override def histogram(aspect: String, value: Double, sampleRate: SampleRate, tags: String*): Unit = {
     recordHistogramValue(aspect, value, sampleRate, tags: _*)
   }
 
@@ -672,7 +675,7 @@ final class NonBlockingStatsdClient(
     * array of tags to be added to the data
     */
   override def recordHistogramValue(aspect: String, value: Long, tags: String*): Unit = {
-    val sb = new StringBuilder()
+    val sb = new JStringBuilder()
 
     sb.append(prefix)
     sb.append(aspect)
@@ -687,16 +690,16 @@ final class NonBlockingStatsdClient(
   /**
     * {@inheritDoc }
     */
-  override def recordHistogramValue(aspect: String, value: Long, sampleRate: Double, tags: String*): Unit = {
+  override def recordHistogramValue(aspect: String, value: Long, sampleRate: SampleRate, tags: String*): Unit = {
     if (validSample(sampleRate)) {
-      val sb = new StringBuilder()
+      val sb = new JStringBuilder()
 
       sb.append(prefix)
       sb.append(aspect)
       sb.append(":")
       sb.append(value)
       sb.append("|h|@")
-      sb.append(sampleRate)
+      sb.append(sampleRate.text)
       appendTagString(sb, tags)
 
       client.send(sb.toString)
@@ -713,7 +716,7 @@ final class NonBlockingStatsdClient(
   /**
     * {@inheritDoc }
     */
-  override def histogram(aspect: String, value: Long, sampleRate: Double, tags: String*): Unit = {
+  override def histogram(aspect: String, value: Long, sampleRate: SampleRate, tags: String*): Unit = {
     recordHistogramValue(aspect, value, sampleRate, tags: _*)
   }
 
@@ -748,7 +751,7 @@ final class NonBlockingStatsdClient(
   override def recordEvent(event: Event, tags: String*): Unit = {
     val title = escapeEventString(prefix + event.getTitle)
     val text = escapeEventString(event.getText)
-    val sb = new StringBuilder()
+    val sb = new JStringBuilder()
 
     sb.append("_e{")
     sb.append(title.length)
@@ -780,7 +783,7 @@ final class NonBlockingStatsdClient(
 
   private def toStatsDString(sc: ServiceCheck): String = {
     // see http://docs.datadoghq.com/guides/dogstatsd/#service-checks
-    val sb = new StringBuilder
+    val sb = new JStringBuilder
 
     sb.append("_sc|")
     sb.append(sc.getName)
@@ -833,7 +836,7 @@ final class NonBlockingStatsdClient(
   def recordSetValue(aspect: String, value: String, tags: String*): Unit = {
     // Documentation is light, but looking at dogstatsd source, we can send string values
     // here instead of numbers
-    val sb = new StringBuilder()
+    val sb = new JStringBuilder()
 
     sb.append(prefix)
     sb.append(aspect)
@@ -845,7 +848,7 @@ final class NonBlockingStatsdClient(
     client.send(sb.toString)
   }
 
-  private def validSample(sampleRate: Double): Boolean = {
-    !(sampleRate != 1 && Math.random > sampleRate)
+  private def validSample(sampleRate: SampleRate): Boolean = {
+    !(sampleRate.value != 1 && Math.random > sampleRate.value)
   }
 }

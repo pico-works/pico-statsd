@@ -1,10 +1,12 @@
 package org.pico.statsd
 
+import java.lang.{StringBuilder => JStringBuilder}
+
 object Tags {
   /**
     * Generate a suffix conveying the given tag list to the client
     */
-  def appendTagString(sb: StringBuilder, tags: Seq[String], tagPrefix: String): Unit = {
+  def appendTagString(sb: JStringBuilder, tags: Seq[String], tagPrefix: String): Unit = {
     if (tagPrefix != null) {
       if (tags == null || tags.isEmpty) {
         sb.append(tagPrefix)
