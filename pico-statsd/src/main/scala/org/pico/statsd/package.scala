@@ -16,7 +16,6 @@ package object statsd {
   
   def metricsSink[A: Sampler](aspect: String, sampleRate: SampleRate, tags: String*)
                     (implicit c: StatsdClient, m: Metric[A]): Sink[A] = {
-    implicit val sampling = Sampling[A](sampleRate)
     Sink[A](c.sample[A])
   }
   
