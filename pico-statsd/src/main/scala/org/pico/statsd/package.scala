@@ -24,7 +24,7 @@ package object statsd {
                      (implicit c: StatsdClient): Sink[A] = {
     val tagList = tags.toList
     Sink[A] { a =>
-      c.send(aspect, SampleRated(sampleRate, Count(aspect, delta)), tagList)
+      c.send(aspect, SampleRated(sampleRate, Count(delta)), tagList)
     }
   }
   

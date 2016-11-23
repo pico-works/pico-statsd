@@ -14,7 +14,7 @@ object DataPoint {
   def of[D: DataPoint]: DataPoint[D] = implicitly[DataPoint[D]]
 }
 
-case class Count(aspect: String, delta: Long)
+case class Count(delta: Long)
 
 object Count {
   implicit val dataPoint_Count = new DataPoint[Count] with Sampling[Count] {
@@ -112,7 +112,7 @@ object LongGauge {
   }
 }
 
-case class Time(aspect: String, timeInMs: Long)
+case class Time(timeInMs: Long)
 
 object Time {
   implicit val dataPoint_Time = new DataPoint[Time] with Sampling[Time] {

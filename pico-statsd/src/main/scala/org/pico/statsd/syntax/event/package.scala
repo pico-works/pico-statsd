@@ -58,7 +58,7 @@ package object event {
         try {
           bus.publish(a)
         } finally {
-          c.send(aspect, SampleRated(sampleRate, Time(aspect, (Deadline.now - start).toMillis)), tagsArray)
+          c.send(aspect, SampleRated(sampleRate, Time((Deadline.now - start).toMillis)), tagsArray)
         }
       })
       
@@ -94,7 +94,7 @@ package object event {
         try {
           bus.publish(a)
         } finally {
-          c.send(aspect, SampleRated(sampleRate, Time(aspect, (Deadline.now - start).toMillis)), tags)
+          c.send(aspect, SampleRated(sampleRate, Time((Deadline.now - start).toMillis)), tags)
         }
       })
       bus
@@ -122,14 +122,14 @@ package object event {
     @inline
     def withCounter(aspect: String, delta: Long, sampleRate: SampleRate, tags: String*)
                    (implicit c: StatsdClient): SinkSource[A, B] = {
-      self += self.subscribe(a => c.send(aspect, SampleRated(sampleRate, Count(aspect, delta)), tags))
+      self += self.subscribe(a => c.send(aspect, SampleRated(sampleRate, Count(delta)), tags))
       self
     }
   
     @inline
     def withCounter(aspect: String, sampleRate: SampleRate, tags: String*)
                    (implicit c: StatsdClient): SinkSource[A, B] = {
-      self += self.subscribe(a => c.send(aspect, SampleRated(sampleRate, Count(aspect, 1L)), tags))
+      self += self.subscribe(a => c.send(aspect, SampleRated(sampleRate, Count(1L)), tags))
       self
     }
   }
@@ -139,14 +139,14 @@ package object event {
     @inline
     def withCounter(aspect: String, delta: Long, sampleRate: SampleRate, tags: String*)
                    (implicit c: StatsdClient): Source[A] = {
-      self += self.effect(a => c.send(aspect, SampleRated(sampleRate, Count(aspect, delta)), tags))
+      self += self.effect(a => c.send(aspect, SampleRated(sampleRate, Count(delta)), tags))
       self
     }
     
     @inline
     def withCounter(aspect: String, sampleRate: SampleRate, tags: String*)
                    (implicit c: StatsdClient): Source[A] = {
-      self += self.effect(a => c.send(aspect, SampleRated(sampleRate, Count(aspect, 1L)), tags))
+      self += self.effect(a => c.send(aspect, SampleRated(sampleRate, Count(1L)), tags))
       self
     }
   }

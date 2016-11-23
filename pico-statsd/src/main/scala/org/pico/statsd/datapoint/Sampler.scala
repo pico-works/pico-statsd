@@ -114,7 +114,7 @@ case class TimerSampler(aspect: String) extends Sampler[Long] {
   override def constantTags: List[String] = List.empty
 
   override def sendIn(client: StatsdClient, a: Long, tags: List[String]): Unit = {
-    client.send(aspect, Time(aspect, a), tags)
+    client.send(aspect, Time(a), tags)
   }
 
   override def deriveTags(a: Long, tags: List[String]): List[String] = tags

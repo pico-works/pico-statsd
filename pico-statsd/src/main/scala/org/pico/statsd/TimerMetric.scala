@@ -29,7 +29,7 @@ object TimerMetric {
         value: A,
         duration: FiniteDuration,
         sampleRate: SampleRate, t: List[String]): Unit = {
-      client.send(aspect, SampleRated(sampleRate, Time(aspect, duration.toMillis)), t ++ tags(value))
+      client.send(aspect, SampleRated(sampleRate, Time(duration.toMillis)), t ++ tags(value))
     }
   }
 }
