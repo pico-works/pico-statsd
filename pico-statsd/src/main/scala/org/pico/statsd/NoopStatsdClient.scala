@@ -8,7 +8,7 @@ object NoopStatsdClient extends StatsdClient {
     */
   override def stop(): Unit = ()
 
-  override def send[D: DataPointWritable](d: D): Unit = ()
+  override def send[D: DataPointWritable](aspect: String, d: D): Unit = ()
 
   override def sample[S: Sampler: Sampling](s: S): Unit = ()
 }

@@ -15,7 +15,7 @@ trait StatsdClient {
     */
   def stop(): Unit
 
-  def send[D: DataPointWritable](d: D): Unit
+  def send[D: DataPointWritable](aspect: String, d: D): Unit
 
   def sample[S: Sampler: Sampling](s: S): Unit
 }

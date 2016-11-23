@@ -281,10 +281,10 @@ final class NonBlockingStatsdClient(
     client.send(sb.toString)
   }
 
-  override def send[D: DataPointWritable](d: D): Unit = {
+  override def send[D: DataPointWritable](aspect: String, d: D): Unit = {
     val sb = new StringBuilder()
     // TODO: Write more tags
-    DataPointWritable.of[D].write(sb, prefix, d, (_, _) => ())
+    DataPointWritable.of[D].write(sb, prefix, aspect, d, (_, _) => ())
     client.send(sb.toString)
   }
 
