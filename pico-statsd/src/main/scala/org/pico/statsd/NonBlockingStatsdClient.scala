@@ -2,11 +2,10 @@ package org.pico.statsd
 
 import java.lang.{StringBuilder => JStringBuilder}
 import java.net.InetSocketAddress
-import java.text.DecimalFormat
 import java.util.concurrent.Callable
 
 import com.timgroup.statsd._
-import org.pico.statsd.datapoint.{DataPointWritable, Sampleable, Sampler, Sampling}
+import org.pico.statsd.datapoint.{DataPointWritable, Sampler}
 
 /**
   * Create a new StatsD client communicating with a StatsD instance on the
@@ -242,7 +241,7 @@ final class NonBlockingStatsdClient(
   override def stop(): Unit = client.stop()
 
   override def send[D: DataPointWritable](aspect: String, sampleRate: SampleRate, d: D, tags: Seq[String]): Unit = {
-    val sb = new StringBuilder()
+    val sb = new StringBuilder(100)
 
     // TODO: Write more tags
     DataPointWritable.of[D].write(sb, prefix, aspect, sampleRate, d) { tagWriter =>

@@ -24,7 +24,7 @@ object MetricPerformanceMain {
     val record = Record(Topic("topic"), 1L, 1000L)
 
     for (statsd <- Auto(new NonBlockingStatsdClient("attackstream-dedup", "localhost", 8125))) {
-      implicit val statsdInstance = statsd.sampledAt(SampleRate(0.001))
+      implicit val statsdInstance = statsd //.sampledAt(SampleRate(0.001))
 
       val bus = Bus[Record]
 
