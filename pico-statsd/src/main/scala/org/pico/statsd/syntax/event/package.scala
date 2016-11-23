@@ -58,7 +58,7 @@ package object event {
         try {
           bus.publish(a)
         } finally {
-          c.send(aspect, SampleRated(sampleRate, Time((Deadline.now - start).toMillis)), tagsArray)
+          c.sampledAt(sampleRate).send(aspect, Time((Deadline.now - start).toMillis), tagsArray)
         }
       })
       
@@ -94,7 +94,7 @@ package object event {
         try {
           bus.publish(a)
         } finally {
-          c.send(aspect, SampleRated(sampleRate, Time((Deadline.now - start).toMillis)), tags)
+          c.sampledAt(sampleRate).send(aspect, Time((Deadline.now - start).toMillis), tags)
         }
       })
       bus
@@ -122,14 +122,14 @@ package object event {
     @inline
     def withCounter(aspect: String, delta: Long, sampleRate: SampleRate, tags: String*)
                    (implicit c: StatsdClient): SinkSource[A, B] = {
-      self += self.subscribe(a => c.send(aspect, SampleRated(sampleRate, Count(delta)), tags))
+      self += self.subscribe(a => c.sampledAt(sampleRate).send(aspect, Count(delta), tags))
       self
     }
   
     @inline
     def withCounter(aspect: String, sampleRate: SampleRate, tags: String*)
                    (implicit c: StatsdClient): SinkSource[A, B] = {
-      self += self.subscribe(a => c.send(aspect, SampleRated(sampleRate, Count(1L)), tags))
+      self += self.subscribe(a => c.sampledAt(sampleRate).send(aspect, Count(1L), tags))
       self
     }
   }
@@ -139,14 +139,14 @@ package object event {
     @inline
     def withCounter(aspect: String, delta: Long, sampleRate: SampleRate, tags: String*)
                    (implicit c: StatsdClient): Source[A] = {
-      self += self.effect(a => c.send(aspect, SampleRated(sampleRate, Count(delta)), tags))
+      self += self.effect(a => c.sampledAt(sampleRate).send(aspect, Count(delta), tags))
       self
     }
     
     @inline
     def withCounter(aspect: String, sampleRate: SampleRate, tags: String*)
                    (implicit c: StatsdClient): Source[A] = {
-      self += self.effect(a => c.send(aspect, SampleRated(sampleRate, Count(1L)), tags))
+      self += self.effect(a => c.sampledAt(sampleRate).send(aspect, Count(1L), tags))
       self
     }
   }
@@ -157,14 +157,14 @@ package object event {
     @inline
     def withIntegralGauge(aspect: String, value: B => Long, sampleRate: SampleRate, tags: String*)
                          (implicit c: StatsdClient): SinkSource[A, B] = {
-      self += self.effect(a => c.send(aspect, SampleRated(sampleRate, LongGauge(value(a))), tags))
+      self += self.effect(a => c.sampledAt(sampleRate).send(aspect, LongGauge(value(a)), tags))
       self
     }
   
     @inline
     def withFractionalGauge(aspect: String, value: B => Long, sampleRate: SampleRate, tags: String*)
                          (implicit c: StatsdClient): SinkSource[A, B] = {
-      self += self.effect(a => c.send(aspect, SampleRated(sampleRate, LongGauge(value(a))), tags))
+      self += self.effect(a => c.sampledAt(sampleRate).send(aspect, LongGauge(value(a)), tags))
       self
     }
   }
@@ -174,14 +174,14 @@ package object event {
     @inline
     def withIntegralGauge(aspect: String, value: A => Long, sampleRate: SampleRate, tags: String*)
                            (implicit c: StatsdClient): Source[A] = {
-      self += self.effect(a => c.send(aspect, SampleRated(sampleRate, LongGauge(value(a))), tags))
+      self += self.effect(a => c.sampledAt(sampleRate).send(aspect, LongGauge(value(a)), tags))
       self
     }
     
     @inline
     def withFractionalGauge(aspect: String, value: A => Double, sampleRate: SampleRate, tags: String*)
                  (implicit c: StatsdClient): Source[A] = {
-      self += self.effect(a => c.send(aspect, SampleRated(sampleRate, DoubleGauge(value(a))), tags))
+      self += self.effect(a => c.sampledAt(sampleRate).send(aspect, DoubleGauge(value(a)), tags))
       self
     }
   }
@@ -192,14 +192,14 @@ package object event {
     @inline
     def withIntegralHistogram(aspect: String, value: B => Long, sampleRate: SampleRate, tags: String*)
                          (implicit c: StatsdClient): SinkSource[A, B] = {
-      self += self.effect(a => c.send(aspect, SampleRated(sampleRate, LongHistogram(value(a))), tags))
+      self += self.effect(a => c.sampledAt(sampleRate).send(aspect, LongHistogram(value(a)), tags))
       self
     }
   
     @inline
     def withFractionalHistogram(aspect: String, value: B => Long, sampleRate: SampleRate, tags: String*)
                            (implicit c: StatsdClient): SinkSource[A, B] = {
-      self += self.effect(a => c.send(aspect, SampleRated(sampleRate, LongHistogram(value(a))), tags))
+      self += self.effect(a => c.sampledAt(sampleRate).send(aspect, LongHistogram(value(a)), tags))
       self
     }
   }
@@ -209,14 +209,14 @@ package object event {
     @inline
     def withIntegralHistogram(aspect: String, value: A => Long, sampleRate: SampleRate, tags: String*)
                              (implicit c: StatsdClient): Source[A] = {
-      self += self.effect(a => c.send(aspect, SampleRated(sampleRate, LongHistogram(value(a))), tags))
+      self += self.effect(a => c.sampledAt(sampleRate).send(aspect, LongHistogram(value(a)), tags))
       self
     }
   
     @inline
     def withFractionalHistogram(aspect: String, value: A => Double, sampleRate: SampleRate, tags: String*)
                                (implicit c: StatsdClient): Source[A] = {
-      self += self.effect(a => c.send(aspect, SampleRated(sampleRate, DoubleHistogram(value(a))), tags))
+      self += self.effect(a => c.sampledAt(sampleRate).send(aspect, DoubleHistogram(value(a)), tags))
       self
     }
   }

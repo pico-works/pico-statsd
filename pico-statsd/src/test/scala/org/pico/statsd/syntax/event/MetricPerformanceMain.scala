@@ -14,11 +14,6 @@ object MetricPerformanceMain {
 
   case class Record(topic: Topic, partition: Long, offset: Long)
 
-//  implicit def consumedRecordMetric[A]: Metric[Record] =
-//    Metric[Record](
-//      r => List(IntegralGauge("offset", r.offset), Counter("record.count", 1)),
-//      x => List("topic:" + x.topic.name, "partition:" + x.partition))
-
   implicit val samplerRecord = Sampler[Record](
     IntegralGaugeSampler("offset").comap(_.offset),
     IncrementSampler("record.count"),
@@ -29,7 +24,7 @@ object MetricPerformanceMain {
     val record = Record(Topic("topic"), 1L, 1000L)
 
     for (statsd <- Auto(new NonBlockingStatsdClient("attackstream-dedup", "localhost", 8125))) {
-      implicit val statsdInstance = statsd
+      implicit val statsdInstance = statsd.sampledAt(SampleRate(0.001))
 
       val bus = Bus[Record]
 

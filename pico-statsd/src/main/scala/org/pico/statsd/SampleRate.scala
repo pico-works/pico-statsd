@@ -9,5 +9,7 @@ case class SampleRate(value: Double) {
 object SampleRate {
   val always = SampleRate(1)
 
+  val never = SampleRate(0)
+
   private val decimalFormat = new DecimalFormat("#.################")
 }

@@ -38,6 +38,8 @@ final class NonBlockingStatsdClient(
     var constantTags: Array[String] = null,
     val errorHandler: StatsDClientErrorHandler,
     val addressLookup: Callable[InetSocketAddress]) extends StatsdClient {
+  override def sampleRate: SampleRate = SampleRate.always
+
   // Empty list should be null for faster comparison
   if (constantTags != null && constantTags.isEmpty) {
     constantTags = null
@@ -239,24 +241,20 @@ final class NonBlockingStatsdClient(
     */
   override def stop(): Unit = client.stop()
 
-  override def send[D: DataPointWritable](aspect: String, d: D, tags: Seq[String]): Unit = {
+  protected override def send[D: DataPointWritable](aspect: String, sampleRate: SampleRate, d: D, tags: Seq[String]): Unit = {
     val sb = new StringBuilder()
 
     // TODO: Write more tags
-    DataPointWritable.of[D].write(sb, prefix, aspect, d) { tagWriter =>
+    DataPointWritable.of[D].write(sb, prefix, aspect, sampleRate, d) { tagWriter =>
 
     }
 
     client.send(sb.toString)
   }
 
-  private def validSample(sampleRate: SampleRate): Boolean = {
-    !(sampleRate.value != 1 && Math.random > sampleRate.value)
+  override def sample[S: Sampler](s: S): Unit = {
+    Sampler.of[S].sendIn(this, s)
   }
 
-  override def sample[S: Sampler: Sampling](s: S): Unit = {
-    if (validSample(Sampling.of[S].sampleRate(s))) {
-      Sampler.of[S].sendIn(this, s)
-    }
-  }
+  override def sampledAt(sampleRate: SampleRate): StatsdClient = new SamplingStatsdClient(this, sampleRate)
 }

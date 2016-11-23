@@ -1,17 +1,17 @@
 package org.pico.statsd.datapoint
 
-import org.pico.statsd.TagWriter
+import org.pico.statsd.{SampleRate, TagWriter}
 
 trait DataPointWritable[A] {
-  def write(sb: StringBuilder, prefix: String, aspect: String, a: A)(writeExtraTags: TagWriter => Unit): Unit
+  def write(sb: StringBuilder, prefix: String, aspect: String, sampleRate: SampleRate, a: A)(writeExtraTags: TagWriter => Unit): Unit
 }
 
 object DataPointWritable {
   def of[D: DataPointWritable]: DataPointWritable[D] = implicitly[DataPointWritable[D]]
 
-  implicit def singletonDataPoints[D: DataPoint: Sampling]: DataPointWritable[D] = {
+  implicit def singletonDataPoints[D: DataPoint]: DataPointWritable[D] = {
     new DataPointWritable[D] {
-      override def write(sb: StringBuilder, prefix: String, aspect: String, a: D)(writeExtraTags: TagWriter => Unit): Unit = {
+      override def write(sb: StringBuilder, prefix: String, aspect: String, sampleRate: SampleRate, a: D)(writeExtraTags: TagWriter => Unit): Unit = {
         sb.append(prefix)
 
         if (prefix.nonEmpty && aspect.nonEmpty) {
@@ -23,7 +23,12 @@ object DataPointWritable {
         DataPoint.of[D].writeValue(sb, a)
         sb.append("|")
         DataPoint.of[D].writeType(sb)
-        DataPoint.of[D].writeSampleRate(sb, a)
+
+        if (sampleRate.value != 1.0) {
+          sb.append("@")
+          sb.append(sampleRate.text)
+        }
+
         writeExtraTags(new TagWriter(sb))
       }
     }
