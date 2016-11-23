@@ -1,5 +1,7 @@
 package org.pico.statsd
 
+import java.io.Closeable
+
 import org.pico.statsd.datapoint.{DataPointWritable, Sampler}
 
 /**
@@ -8,14 +10,8 @@ import org.pico.statsd.datapoint.{DataPointWritable, Sampler}
   *
   * @author Tom Denley
   */
-trait StatsdClient {
+trait StatsdClient extends Closeable {
   def sampleRate: SampleRate
-
-  /**
-    * Cleanly shut down this StatsD client. This method may throw an exception if
-    * the socket cannot be closed.
-    */
-  def stop(): Unit
 
   def send[D: DataPointWritable](aspect: String, sampleRate: SampleRate, d: D, tags: Seq[String]): Unit
 

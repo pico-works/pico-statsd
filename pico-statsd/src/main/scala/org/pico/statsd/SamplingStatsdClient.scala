@@ -9,7 +9,7 @@ class SamplingStatsdClient(impl: StatsdClient, override val sampleRate: SampleRa
     * Cleanly shut down this StatsD client. This method may throw an exception if
     * the socket cannot be closed.
     */
-  override def stop(): Unit = impl.stop()
+  override def close(): Unit = impl.close()
 
   override def send[D: DataPointWritable](aspect: String, sampleRate: SampleRate, d: D, tags: Seq[String]): Unit = {
     impl.send(aspect, sampleRate, d, tags)

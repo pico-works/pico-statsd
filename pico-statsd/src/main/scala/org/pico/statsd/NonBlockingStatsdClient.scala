@@ -239,7 +239,7 @@ final class NonBlockingStatsdClient(
     * Cleanly shut down this StatsD client. This method may throw an exception if
     * the socket cannot be closed.
     */
-  override def stop(): Unit = client.stop()
+  override def close(): Unit = client.stop()
 
   val baos = new ByteArrayOutputStream(1000)
   val out = new PrintWriter(baos)
