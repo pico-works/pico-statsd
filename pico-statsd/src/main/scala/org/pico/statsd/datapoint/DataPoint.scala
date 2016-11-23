@@ -26,19 +26,7 @@ object Count {
   }
 }
 
-case class IncrementCounter(tags: Seq[String])
-
-object IncrementCounter {
-  implicit val dataPoint_IncrementCounter = new DataPoint[IncrementCounter] {
-    override def writeValue(sb: StringBuilder, a: IncrementCounter): Unit = sb.append(1L)
-
-    override def writeType(sb: StringBuilder): Unit = sb.append("c")
-
-    override def writeSampleRate(sb: StringBuilder, a: IncrementCounter): Unit = ()
-  }
-}
-
-case class Increment(tags: Seq[String])
+case class Increment()
 
 object Increment {
   implicit val dataPoint_Increment = new DataPoint[Increment] {
@@ -50,19 +38,7 @@ object Increment {
   }
 }
 
-case class DecrementCounter(tags: Seq[String])
-
-object DecrementCounter {
-  implicit val dataPoint_DecrementCounter = new DataPoint[DecrementCounter] {
-    override def writeValue(sb: StringBuilder, a: DecrementCounter): Unit = sb.append(-1L)
-
-    override def writeType(sb: StringBuilder): Unit = sb.append("c")
-
-    override def writeSampleRate(sb: StringBuilder, a: DecrementCounter): Unit = ()
-  }
-}
-
-case class Decrement(tags: Seq[String])
+case class Decrement()
 
 object Decrement {
   implicit val dataPoint_Decrement = new DataPoint[Decrement] {

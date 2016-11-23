@@ -16,7 +16,7 @@ object MetricPerformanceMain {
 
   implicit val samplerRecord = Sampler[Record](
     IntegralGaugeSampler("offset").comap(_.offset),
-    IncrementSampler("record.count"),
+    CountSampler("record.count"),
     TaggedBy(v => "topic:" + v.topic.name),
     TaggedBy(v => "partition:" + v.partition))
 

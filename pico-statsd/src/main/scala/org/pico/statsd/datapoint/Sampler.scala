@@ -50,13 +50,43 @@ object Sampler {
   }
 }
 
+case class SumSampler[A](aspect: String) extends Sampler[Long] {
+  override def constantTags: List[String] = List.empty
+
+  override def deriveTags(a: Long, tags: List[String]): List[String] = tags
+
+  override def sendIn(client: StatsdClient, a: Long, tags: List[String]): Unit = {
+    client.send(aspect, Count(a), tags)
+  }
+}
+
+case class CountSampler[A](aspect: String) extends Sampler[A] {
+  override def constantTags: List[String] = List.empty
+
+  override def deriveTags(a: A, tags: List[String]): List[String] = tags
+
+  override def sendIn(client: StatsdClient, a: A, tags: List[String]): Unit = {
+    client.send(aspect, Increment(), tags)
+  }
+}
+
 case class IncrementSampler[A](aspect: String) extends Sampler[A] {
   override def constantTags: List[String] = List.empty
 
   override def deriveTags(a: A, tags: List[String]): List[String] = tags
 
   override def sendIn(client: StatsdClient, a: A, tags: List[String]): Unit = {
-    client.send(aspect, LongGauge(1L), tags)
+    client.send(aspect, Increment(), tags)
+  }
+}
+
+case class DecrementSampler[A](aspect: String) extends Sampler[A] {
+  override def constantTags: List[String] = List.empty
+
+  override def deriveTags(a: A, tags: List[String]): List[String] = tags
+
+  override def sendIn(client: StatsdClient, a: A, tags: List[String]): Unit = {
+    client.send(aspect, Decrement(), tags)
   }
 }
 
