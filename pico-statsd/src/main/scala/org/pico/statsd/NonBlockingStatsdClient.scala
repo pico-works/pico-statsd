@@ -6,7 +6,7 @@ import java.text.DecimalFormat
 import java.util.concurrent.Callable
 
 import com.timgroup.statsd._
-import org.pico.statsd.datapoint.{DataPointWritable, Sampling}
+import org.pico.statsd.datapoint.{DataPointWritable, Sampleable, Sampling}
 
 /**
   * Create a new StatsD client communicating with a StatsD instance on the
@@ -281,13 +281,11 @@ final class NonBlockingStatsdClient(
     client.send(sb.toString)
   }
 
-  override def send[D: DataPointWritable: Sampling](d: D): Unit = {
-    if (validSample(Sampling.of[D].sampleRate(d))) {
-      val sb = new StringBuilder()
-      // TODO: Write more tags
-      DataPointWritable.of[D].write(sb, prefix, d, (_, _) => ())
-      client.send(sb.toString)
-    }
+  override def send[D: DataPointWritable](d: D): Unit = {
+    val sb = new StringBuilder()
+    // TODO: Write more tags
+    DataPointWritable.of[D].write(sb, prefix, d, (_, _) => ())
+    client.send(sb.toString)
   }
 
   def sendMetrics[A](prefix: String, sampleRate: SampleRate, extraTags: Seq[String], m: Metric[A])(value: A): Unit = {
@@ -307,5 +305,11 @@ final class NonBlockingStatsdClient(
 
   private def validSample(sampleRate: SampleRate): Boolean = {
     !(sampleRate.value != 1 && Math.random > sampleRate.value)
+  }
+
+  override def sample[S: Sampleable: Sampling](s: S): Unit = {
+    if (validSample(Sampling.of[S].sampleRate(s))) {
+      Sampleable.of[S].sampleIn(this, s)
+    }
   }
 }

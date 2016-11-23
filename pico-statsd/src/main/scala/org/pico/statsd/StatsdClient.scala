@@ -1,6 +1,6 @@
 package org.pico.statsd
 
-import org.pico.statsd.datapoint.{DataPointWritable, Sampling}
+import org.pico.statsd.datapoint.{DataPointWritable, Sampleable, Sampling}
 
 /**
   * Describes a client connection to a StatsD server, which may be used to post metrics
@@ -15,7 +15,9 @@ trait StatsdClient {
     */
   def stop(): Unit
 
-  def send[D: DataPointWritable: Sampling](d: D): Unit
+  def send[D: DataPointWritable](d: D): Unit
+
+  def sample[S: Sampleable: Sampling](s: S): Unit
 
   def sendMetrics[A](prefix: String, sampleRate: SampleRate, extraTags: Seq[String], m: Metric[A])(value: A): Unit
 }

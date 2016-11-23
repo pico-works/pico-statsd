@@ -16,7 +16,7 @@ object DataPointWritable {
         DataPoint.of[D].writeValue(sb, a)
         sb.append("|")
         DataPoint.of[D].writeType(sb)
-        Sampling.of[D].writeSampleRate(sb, a)
+        DataPoint.of[D].writeSampleRate(sb, a)
         writeExtraTags(DataPoint.of[D].writeTags(sb, a), sb)
       }
     }

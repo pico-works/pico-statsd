@@ -3,6 +3,8 @@ package org.pico.statsd.datapoint
 import org.pico.statsd.{SampleRate, StatsdNumberFormat}
 
 trait DataPoint[A] {
+  def writeSampleRate(sb: StringBuilder, a: A): Unit
+
   def writePrefix(sb: StringBuilder, prefix: String): Unit
 
   def writeAspect(sb: StringBuilder, a: A): Unit
