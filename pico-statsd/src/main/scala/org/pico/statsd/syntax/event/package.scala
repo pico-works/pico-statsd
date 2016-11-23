@@ -3,7 +3,7 @@ package org.pico.statsd.syntax
 import org.pico.disposal.std.autoCloseable._
 import org.pico.event.{Bus, SinkSource, Source}
 import org.pico.statsd._
-import org.pico.statsd.datapoint.{Count, DoubleGauge, LongGauge, Sampled}
+import org.pico.statsd.datapoint._
 
 import scala.concurrent.duration.Deadline
 
@@ -47,7 +47,7 @@ package object event {
   implicit class SinkSourceOps_Timer_Rht98nT[A, B](val self: SinkSource[A, B]) extends AnyVal {
     
     @inline
-    def withSimpleTimer(aspect: String, sampleRate: Option[SampleRate], tags: String*)
+    def withSimpleTimer(aspect: String, sampleRate: SampleRate, tags: String*)
                    (implicit c: StatsdClient): SinkSource[A, B] = {
       val tagsArray = tags.toArray
       val bus = Bus[B]
@@ -56,7 +56,7 @@ package object event {
         try {
           bus.publish(a)
         } finally {
-          c.time(aspect, (Deadline.now - start).toMillis, sampleRate.getOrElse(SampleRate.always), tagsArray: _*)
+          c.send(Sampled(sampleRate, Time(aspect, (Deadline.now - start).toMillis, tagsArray)))
         }
       })
       
@@ -64,7 +64,7 @@ package object event {
     }
     
     @inline
-    def withTimer(aspect: String, sampleRate: Option[SampleRate], tags: String*)
+    def withTimer(aspect: String, sampleRate: SampleRate, tags: String*)
                    (implicit c: StatsdClient, m: TimerMetric[B]): SinkSource[A, B] = {
       val bus = Bus[B]
       bus += self.subscribe(a => {
@@ -84,23 +84,22 @@ package object event {
   implicit class SourceOps_Timer_Rht98nT[A](val self: Source[A]) extends AnyVal {
     
     @inline
-    def withSimpleTimer(aspect: String, sampleRate: Option[SampleRate], tags: String*)
+    def withSimpleTimer(aspect: String, sampleRate: SampleRate, tags: String*)
                    (implicit c: StatsdClient): Source[A] = {
-      val tagsArray = tags.toArray
       val bus = Bus[A]
       bus += self.subscribe(a => {
         val start = Deadline.now
         try {
           bus.publish(a)
         } finally {
-          c.time(aspect, (Deadline.now - start).toMillis, sampleRate.getOrElse(SampleRate.always), tagsArray: _*)
+          c.send(Sampled(sampleRate, Time(aspect, (Deadline.now - start).toMillis, tags)))
         }
       })
       bus
     }
     
     @inline
-    def withTimer(aspect: String, sampleRate: Option[SampleRate], tags: String*)
+    def withTimer(aspect: String, sampleRate: SampleRate, tags: String*)
                    (implicit c: StatsdClient, m: TimerMetric[A]): Source[A] = {
       val bus = Bus[A]
       bus += self.subscribe(a => {
@@ -189,18 +188,16 @@ package object event {
   implicit class SinkSourceOps_Histogram_Rht98nT[A, B](val self: SinkSource[A, B]) extends AnyVal {
   
     @inline
-    def withIntegralHistogram(aspect: String, value: B => Long, sampleRate: Option[SampleRate], tags: String*)
+    def withIntegralHistogram(aspect: String, value: B => Long, sampleRate: SampleRate, tags: String*)
                          (implicit c: StatsdClient): SinkSource[A, B] = {
-      val tagsArray = tags.toArray
-      self += self.subscribe { x => c.histogram(aspect, value(x), sampleRate.getOrElse(SampleRate.always), tagsArray: _*) }
+      self += self.effect(a => c.send(Sampled(sampleRate, LongHistogram(aspect, value(a), tags))))
       self
     }
   
     @inline
-    def withFractionalHistogram(aspect: String, value: B => Long, sampleRate: Option[SampleRate], tags: String*)
+    def withFractionalHistogram(aspect: String, value: B => Long, sampleRate: SampleRate, tags: String*)
                            (implicit c: StatsdClient): SinkSource[A, B] = {
-      val tagsArray = tags.toArray
-      self += self.subscribe { x => c.histogram(aspect, value(x), sampleRate.getOrElse(SampleRate.always), tagsArray: _*) }
+      self += self.effect(a => c.send(Sampled(sampleRate, LongHistogram(aspect, value(a), tags))))
       self
     }
   }
@@ -208,18 +205,16 @@ package object event {
   implicit class SourceOps_Histogram_Rht98nT[A](val self: Source[A]) extends AnyVal {
   
     @inline
-    def withIntegralHistogram(aspect: String, value: A => Long, sampleRate: Option[SampleRate], tags: String*)
+    def withIntegralHistogram(aspect: String, value: A => Long, sampleRate: SampleRate, tags: String*)
                              (implicit c: StatsdClient): Source[A] = {
-      val tagsArray = tags.toArray
-      self += self.effect { x => c.histogram(aspect, value(x), sampleRate.getOrElse(SampleRate.always), tagsArray: _*) }
+      self += self.effect(a => c.send(Sampled(sampleRate, LongHistogram(aspect, value(a), tags))))
       self
     }
   
     @inline
-    def withFractionalHistogram(aspect: String, value: A => Double, sampleRate: Option[SampleRate], tags: String*)
+    def withFractionalHistogram(aspect: String, value: A => Double, sampleRate: SampleRate, tags: String*)
                                (implicit c: StatsdClient): Source[A] = {
-      val tagsArray = tags.toArray
-      self += self.effect { x => c.histogram(aspect, value(x), sampleRate.getOrElse(SampleRate.always), tagsArray: _*) }
+      self += self.effect(a => c.send(Sampled(sampleRate, DoubleHistogram(aspect, value(a), tags))))
       self
     }
   }

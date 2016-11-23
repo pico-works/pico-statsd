@@ -6,7 +6,7 @@ import java.text.DecimalFormat
 import java.util.concurrent.Callable
 
 import com.timgroup.statsd._
-import org.pico.statsd.datapoint.{Count, DataPoint, DataPoints, Sampling}
+import org.pico.statsd.datapoint.{DataPoints, Sampling}
 
 /**
   * Create a new StatsD client communicating with a StatsD instance on the
@@ -248,95 +248,6 @@ final class NonBlockingStatsdClient(
 
   val decimalFormat = new DecimalFormat("#.################")
 
-  override def time(aspect: String, timeInMs: Long, tags: String*): Unit = {
-    val sb = new JStringBuilder()
-
-    sb.append(prefix)
-    sb.append(aspect)
-    sb.append(":")
-    sb.append(timeInMs)
-    sb.append("|ms")
-    appendTagString(sb, tags)
-
-    client.send(sb.toString)
-  }
-
-  override def time(aspect: String, timeInMs: Long, sampleRate: SampleRate, tags: String*): Unit = {
-    if (validSample(sampleRate)) {
-      val sb = new JStringBuilder()
-      sb.append(prefix)
-      sb.append(aspect)
-      sb.append(":")
-      sb.append(timeInMs)
-      sb.append("|ms|@")
-      sb.append(sampleRate.text)
-      appendTagString(sb, tags)
-      client.send(sb.toString)
-    }
-  }
-
-  override def histogram(aspect: String, value: Double, tags: String*): Unit = {
-    // Intentionally using %s rather than %f here to avoid
-    // padding with extra 0s to represent precision
-    val sb = new JStringBuilder()
-
-    sb.append(prefix)
-    sb.append(aspect)
-    sb.append(":")
-    sb.append(StatsdNumberFormat.get.format(value))
-    sb.append("|h")
-    appendTagString(sb, tags)
-
-    client.send(sb.toString)
-  }
-
-  override def histogram(aspect: String, value: Double, sampleRate: SampleRate, tags: String*): Unit = {
-    if (validSample(sampleRate)) {
-      // Intentionally using %s rather than %f here to avoid
-      // padding with extra 0s to represent precision
-      val sb = new JStringBuilder()
-
-      sb.append(prefix)
-      sb.append(aspect)
-      sb.append(":")
-      sb.append(StatsdNumberFormat.get.format(value))
-      sb.append("|h|@")
-      sb.append(sampleRate.text)
-      appendTagString(sb, tags)
-
-      client.send(sb.toString)
-    }
-  }
-
-  override def histogram(aspect: String, value: Long, tags: String*): Unit = {
-    val sb = new JStringBuilder()
-
-    sb.append(prefix)
-    sb.append(aspect)
-    sb.append(":")
-    sb.append(value)
-    sb.append("|h")
-    appendTagString(sb, tags)
-
-    client.send(sb.toString)
-  }
-
-  override def histogram(aspect: String, value: Long, sampleRate: SampleRate, tags: String*): Unit = {
-    if (validSample(sampleRate)) {
-      val sb = new JStringBuilder()
-
-      sb.append(prefix)
-      sb.append(aspect)
-      sb.append(":")
-      sb.append(value)
-      sb.append("|h|@")
-      sb.append(sampleRate.text)
-      appendTagString(sb, tags)
-
-      client.send(sb.toString)
-    }
-  }
-
   /**
     * Records a value for the specified set.
     *
@@ -387,10 +298,10 @@ final class NonBlockingStatsdClient(
     m.values(value).foreach {
       case IntegralGauge(aspect, v) => ??? // gauge(fullAspectName(aspect), v, sampleRate, tags: _*)
       case FractionalGauge(aspect, v) => ??? // gauge(fullAspectName(aspect), v, sampleRate, tags: _*)
-      case IntegralHistogram(aspect, v) => histogram(fullAspectName(aspect), v, sampleRate, tags: _*)
-      case FractionalHistogram(aspect, v) => histogram(fullAspectName(aspect), v, sampleRate, tags: _*)
+      case IntegralHistogram(aspect, v) => ??? // histogram(fullAspectName(aspect), v, sampleRate, tags: _*)
+      case FractionalHistogram(aspect, v) => ??? // histogram(fullAspectName(aspect), v, sampleRate, tags: _*)
       case Counter(aspect, v) => ??? // count(fullAspectName(aspect), v, sampleRate, tags: _*)
-      case Timer(aspect, v) => time(fullAspectName(aspect), v.toMillis, sampleRate, tags: _*)
+      case Timer(aspect, v) => ??? // time(fullAspectName(aspect), v.toMillis, sampleRate, tags: _*)
     }
   }
 

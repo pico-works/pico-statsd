@@ -8,18 +8,6 @@ object NoopStatsdClient extends StatsdClient {
     */
   override def stop(): Unit = ()
 
-  override def time(aspect: String, value: Long, tags: String*): Unit = ()
-
-  override def time(aspect: String, value: Long, sampleRate: SampleRate, tags: String*): Unit = ()
-
-  override def histogram(aspect: String, value: Double, tags: String*): Unit = ()
-
-  override def histogram(aspect: String, value: Double, sampleRate: SampleRate, tags: String*): Unit = ()
-
-  override def histogram(aspect: String, value: Long, tags: String*): Unit = ()
-
-  override def histogram(aspect: String, value: Long, sampleRate: SampleRate, tags: String*): Unit = ()
-
   override def sendMetrics[A](prefix: String, sampleRate: SampleRate, extraTags: Seq[String], m: Metric[A])(value: A): Unit = ()
 
   override def send[D: DataPoints : Sampling](d: D): Unit = ()

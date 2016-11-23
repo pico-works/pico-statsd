@@ -15,18 +15,6 @@ trait StatsdClient {
     */
   def stop(): Unit
 
-  def time(aspect: String, value: Long, tags: String*): Unit
-
-  def time(aspect: String, value: Long, sampleRate: SampleRate, tags: String*): Unit
-
-  def histogram(aspect: String, value: Double, tags: String*): Unit
-
-  def histogram(aspect: String, value: Double, sampleRate: SampleRate, tags: String*): Unit
-
-  def histogram(aspect: String, value: Long, tags: String*): Unit
-
-  def histogram(aspect: String, value: Long, sampleRate: SampleRate, tags: String*): Unit
-
   def send[D: DataPoints: Sampling](d: D): Unit
 
   def sendMetrics[A](prefix: String, sampleRate: SampleRate, extraTags: Seq[String], m: Metric[A])(value: A): Unit
