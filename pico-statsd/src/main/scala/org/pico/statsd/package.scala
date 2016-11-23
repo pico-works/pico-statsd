@@ -14,9 +14,11 @@ package object statsd {
     Sink[A](a => f(c, a))
   }
   
-  def metricsSink[A](aspect: String, sampleRate: Option[SampleRate], tags: String*)
+  def metricsSink[A](aspect: String, sampleRate: SampleRate, tags: String*)
                     (implicit c: StatsdClient, m: Metric[A]): Sink[A] = {
-    Sink[A](c.sendMetrics(aspect, sampleRate.getOrElse(SampleRate.always), tags.toList, m))
+    Sink[A] { a =>
+      c.sendMetrics(aspect, sampleRate, tags.toList, m)(a)
+    }
   }
   
   
