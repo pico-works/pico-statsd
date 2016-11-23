@@ -8,8 +8,6 @@ object NoopStatsdClient extends StatsdClient {
     */
   override def stop(): Unit = ()
 
-  override def sendMetrics[A](prefix: String, sampleRate: SampleRate, extraTags: Seq[String], m: Metric[A])(value: A): Unit = ()
-
   override def send[D: DataPointWritable](d: D): Unit = ()
 
   override def sample[S: Sampleable: Sampling](s: S): Unit = ()

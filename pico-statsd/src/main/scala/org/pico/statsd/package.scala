@@ -17,7 +17,8 @@ package object statsd {
   def metricsSink[A](aspect: String, sampleRate: SampleRate, tags: String*)
                     (implicit c: StatsdClient, m: Metric[A]): Sink[A] = {
     Sink[A] { a =>
-      c.sendMetrics(aspect, sampleRate, tags.toList, m)(a)
+//      c.sendMetrics(aspect, sampleRate, tags.toList, m)(a)
+      ???
     }
   }
   
