@@ -254,6 +254,20 @@ object DataPointContext {
 
     override def writeSampleRate(sb: StringBuilder, a: DataPointContext[A]): Unit = sb.append(a.sampleRate)
 
-    override def writeTags(sb: StringBuilder, a: DataPointContext[A]): Boolean = DataPoint.of[A].writeTags(sb, a.value)
+    override def writeTags(sb: StringBuilder, a: DataPointContext[A]): Boolean = {
+      var written = DataPoint.of[A].writeTags(sb, a.value)
+
+      a.tags.foreach { tag =>
+        if (written) {
+          sb.append(",")
+        }
+
+        sb.append(tag)
+
+        written = true
+      }
+
+      written
+    }
   }
 }
