@@ -15,14 +15,6 @@ trait StatsdClient {
     */
   def stop(): Unit
 
-  def gauge(aspect: String, value: Double, tags: String*): Unit
-
-  def gauge(aspect: String, value: Double, sampleRate: SampleRate, tags: String*): Unit
-
-  def gauge(aspect: String, value: Long, tags: String*): Unit
-
-  def gauge(aspect: String, value: Long, sampleRate: SampleRate, tags: String*): Unit
-
   def time(aspect: String, value: Long, tags: String*): Unit
 
   def time(aspect: String, value: Long, sampleRate: SampleRate, tags: String*): Unit

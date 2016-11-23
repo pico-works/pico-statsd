@@ -8,14 +8,6 @@ object NoopStatsdClient extends StatsdClient {
     */
   override def stop(): Unit = ()
 
-  override def gauge(aspect: String, value: Double, tags: String*): Unit = ()
-
-  override def gauge(aspect: String, value: Double, sampleRate: SampleRate, tags: String*): Unit = ()
-
-  override def gauge(aspect: String, value: Long, tags: String*): Unit = ()
-
-  override def gauge(aspect: String, value: Long, sampleRate: SampleRate, tags: String*): Unit = ()
-
   override def time(aspect: String, value: Long, tags: String*): Unit = ()
 
   override def time(aspect: String, value: Long, sampleRate: SampleRate, tags: String*): Unit = ()

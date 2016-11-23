@@ -3,7 +3,7 @@ package org.pico.statsd.syntax
 import org.pico.disposal.std.autoCloseable._
 import org.pico.event.{Bus, SinkSource, Source}
 import org.pico.statsd._
-import org.pico.statsd.datapoint.{Count, Sampled}
+import org.pico.statsd.datapoint.{Count, DoubleGauge, LongGauge, Sampled}
 
 import scala.concurrent.duration.Deadline
 
@@ -121,7 +121,6 @@ package object event {
     @inline
     def withCounter(aspect: String, delta: Long, sampleRate: SampleRate, tags: String*)
                    (implicit c: StatsdClient): SinkSource[A, B] = {
-      val tagsArray = tags.toArray
       self += self.subscribe(a => c.send(Sampled(sampleRate, Count(aspect, delta, tags))))
       self
     }
@@ -129,7 +128,6 @@ package object event {
     @inline
     def withCounter(aspect: String, sampleRate: SampleRate, tags: String*)
                    (implicit c: StatsdClient): SinkSource[A, B] = {
-      val tagsArray = tags.toArray
       self += self.subscribe(a => c.send(Sampled(sampleRate, Count(aspect, 1L, tags))))
       self
     }
@@ -140,7 +138,6 @@ package object event {
     @inline
     def withCounter(aspect: String, delta: Long, sampleRate: SampleRate, tags: String*)
                    (implicit c: StatsdClient): Source[A] = {
-      val tagsArray = tags.toArray
       self += self.effect(a => c.send(Sampled(sampleRate, Count(aspect, delta, tags))))
       self
     }
@@ -148,7 +145,6 @@ package object event {
     @inline
     def withCounter(aspect: String, sampleRate: SampleRate, tags: String*)
                    (implicit c: StatsdClient): Source[A] = {
-      val tagsArray = tags.toArray
       self += self.effect(a => c.send(Sampled(sampleRate, Count(aspect, 1L, tags))))
       self
     }
@@ -158,18 +154,16 @@ package object event {
   implicit class SinkSourceOps_Gauge_Rht98nT[A, B](val self: SinkSource[A, B]) extends AnyVal {
   
     @inline
-    def withIntegralGauge(aspect: String, value: B => Long, sampleRate: Option[SampleRate], tags: String*)
+    def withIntegralGauge(aspect: String, value: B => Long, sampleRate: SampleRate, tags: String*)
                          (implicit c: StatsdClient): SinkSource[A, B] = {
-      val tagsArray = tags.toArray
-      self += self.subscribe { x => c.gauge(aspect, value(x), sampleRate.getOrElse(SampleRate.always), tagsArray: _*) }
+      self += self.effect(a => c.send(Sampled(sampleRate, LongGauge(aspect, value(a), tags))))
       self
     }
   
     @inline
-    def withFractionalGauge(aspect: String, value: B => Long, sampleRate: Option[SampleRate], tags: String*)
+    def withFractionalGauge(aspect: String, value: B => Long, sampleRate: SampleRate, tags: String*)
                          (implicit c: StatsdClient): SinkSource[A, B] = {
-      val tagsArray = tags.toArray
-      self += self.subscribe { x => c.gauge(aspect, value(x), sampleRate.getOrElse(SampleRate.always), tagsArray: _*) }
+      self += self.effect(a => c.send(Sampled(sampleRate, LongGauge(aspect, value(a), tags))))
       self
     }
   }
@@ -177,18 +171,16 @@ package object event {
   implicit class SourceOps_Gauge_Rht98nT[A](val self: Source[A]) extends AnyVal {
   
     @inline
-    def withIntegralGauge(aspect: String, value: A => Long, sampleRate: Option[SampleRate], tags: String*)
+    def withIntegralGauge(aspect: String, value: A => Long, sampleRate: SampleRate, tags: String*)
                            (implicit c: StatsdClient): Source[A] = {
-      val tagsArray = tags.toArray
-      self += self.effect { x => c.gauge(aspect, value(x), sampleRate.getOrElse(SampleRate.always), tagsArray: _*) }
+      self += self.effect(a => c.send(Sampled(sampleRate, LongGauge(aspect, value(a), tags))))
       self
     }
     
     @inline
-    def withFractionalGauge(aspect: String, value: A => Double, sampleRate: Option[SampleRate], tags: String*)
+    def withFractionalGauge(aspect: String, value: A => Double, sampleRate: SampleRate, tags: String*)
                  (implicit c: StatsdClient): Source[A] = {
-      val tagsArray = tags.toArray
-      self += self.effect { x => c.gauge(aspect, value(x), sampleRate.getOrElse(SampleRate.always), tagsArray: _*) }
+      self += self.effect(a => c.send(Sampled(sampleRate, DoubleGauge(aspect, value(a), tags))))
       self
     }
   }

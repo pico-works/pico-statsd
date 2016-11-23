@@ -42,10 +42,10 @@ object Count {
   }
 }
 
-case class IncrementCounter(aspect: String, tags: String*)
+case class IncrementCounter(aspect: String, tags: Seq[String])
 
 object IncrementCounter {
-  implicit val dataPoint_IncrementCounter = new DataPoint[IncrementCounter] {
+  implicit val dataPoint_IncrementCounter = new DataPoint[IncrementCounter] with Sampling[IncrementCounter] {
     override def sampleRate(a: IncrementCounter): SampleRate = SampleRate.always
 
     override def writePrefix(sb: StringBuilder, prefix: String): Unit = sb.append(prefix)
@@ -62,10 +62,10 @@ object IncrementCounter {
   }
 }
 
-case class Increment(aspect: String, tags: String*)
+case class Increment(aspect: String, tags: Seq[String])
 
 object Increment {
-  implicit val dataPoint_Increment = new DataPoint[Increment] {
+  implicit val dataPoint_Increment = new DataPoint[Increment] with Sampling[Increment] {
     override def sampleRate(a: Increment): SampleRate = SampleRate.always
 
     override def writePrefix(sb: StringBuilder, prefix: String): Unit = sb.append(prefix)
@@ -82,10 +82,10 @@ object Increment {
   }
 }
 
-case class DecrementCounter(aspect: String, tags: String*)
+case class DecrementCounter(aspect: String, tags: Seq[String])
 
 object DecrementCounter {
-  implicit val dataPoint_DecrementCounter = new DataPoint[DecrementCounter] {
+  implicit val dataPoint_DecrementCounter = new DataPoint[DecrementCounter] with Sampling[DecrementCounter] {
     override def sampleRate(a: DecrementCounter): SampleRate = SampleRate.always
 
     override def writePrefix(sb: StringBuilder, prefix: String): Unit = sb.append(prefix)
@@ -102,10 +102,10 @@ object DecrementCounter {
   }
 }
 
-case class Decrement(aspect: String, tags: String*)
+case class Decrement(aspect: String, tags: Seq[String])
 
 object Decrement {
-  implicit val dataPoint_Decrement = new DataPoint[Decrement] {
+  implicit val dataPoint_Decrement = new DataPoint[Decrement] with Sampling[Decrement] {
     override def sampleRate(a: Decrement): SampleRate = SampleRate.always
 
     override def writePrefix(sb: StringBuilder, prefix: String): Unit = sb.append(prefix)
@@ -122,10 +122,10 @@ object Decrement {
   }
 }
 
-case class DoubleGauge(aspect: String, value: Double, tags: String*)
+case class DoubleGauge(aspect: String, value: Double, tags: Seq[String])
 
 object DoubleGauge {
-  implicit val dataPoint_DoubleGauge = new DataPoint[DoubleGauge] {
+  implicit val dataPoint_DoubleGauge = new DataPoint[DoubleGauge] with Sampling[DoubleGauge] {
     override def sampleRate(a: DoubleGauge): SampleRate = SampleRate.always
 
     override def writePrefix(sb: StringBuilder, prefix: String): Unit = sb.append(prefix)
@@ -142,10 +142,10 @@ object DoubleGauge {
   }
 }
 
-case class LongGauge(aspect: String, value: Long, tags: String*)
+case class LongGauge(aspect: String, value: Long, tags: Seq[String])
 
 object LongGauge {
-  implicit val dataPoint_LongGauge = new DataPoint[LongGauge] {
+  implicit val dataPoint_LongGauge = new DataPoint[LongGauge] with Sampling[LongGauge] {
     override def sampleRate(a: LongGauge): SampleRate = SampleRate.always
 
     override def writePrefix(sb: StringBuilder, prefix: String): Unit = sb.append(prefix)
@@ -162,10 +162,10 @@ object LongGauge {
   }
 }
 
-case class Time(aspect: String, timeInMs: Long, tags: String*)
+case class Time(aspect: String, timeInMs: Long, tags: Seq[String])
 
 object Time {
-  implicit val dataPoint_Time = new DataPoint[Time] {
+  implicit val dataPoint_Time = new DataPoint[Time] with Sampling[Time] {
     override def sampleRate(a: Time): SampleRate = SampleRate.always
 
     override def writePrefix(sb: StringBuilder, prefix: String): Unit = sb.append(prefix)
@@ -182,10 +182,10 @@ object Time {
   }
 }
 
-case class DoubleHistogram(aspect: String, value: Double, tags: String*)
+case class DoubleHistogram(aspect: String, value: Double, tags: Seq[String])
 
 object DoubleHistogram {
-  implicit val dataPoint_DoubleHistogram = new DataPoint[DoubleHistogram] {
+  implicit val dataPoint_DoubleHistogram = new DataPoint[DoubleHistogram] with Sampling[DoubleHistogram] {
     override def sampleRate(a: DoubleHistogram): SampleRate = SampleRate.always
 
     override def writePrefix(sb: StringBuilder, prefix: String): Unit = sb.append(prefix)
@@ -202,10 +202,10 @@ object DoubleHistogram {
   }
 }
 
-case class LongHistogram(aspect: String, value: Long, tags: String*)
+case class LongHistogram(aspect: String, value: Long, tags: Seq[String])
 
 object LongHistogram {
-  implicit val dataPoint_LongHistogram = new DataPoint[LongHistogram] {
+  implicit val dataPoint_LongHistogram = new DataPoint[LongHistogram] with Sampling[LongHistogram] {
     override def sampleRate(a: LongHistogram): SampleRate = SampleRate.always
 
     override def writePrefix(sb: StringBuilder, prefix: String): Unit = sb.append(prefix)
