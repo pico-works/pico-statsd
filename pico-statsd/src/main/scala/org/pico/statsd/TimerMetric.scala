@@ -1,7 +1,5 @@
 package org.pico.statsd
 
-import com.timgroup.statsd.StatsDClient
-
 import scala.concurrent.duration.FiniteDuration
 
 /**
@@ -10,7 +8,7 @@ import scala.concurrent.duration.FiniteDuration
   */
 sealed trait TimerMetric[A] {
   def tags(value: A): List[String]
-  def send(client: StatsDClient, aspect: String, value: A, duration: FiniteDuration, sampleRate: Option[Double], extraTags: List[String]): Unit
+  def send(client: StatsdClient, aspect: String, value: A, duration: FiniteDuration, sampleRate: Option[SampleRate], extraTags: List[String]): Unit
 }
 
 object TimerMetric {
@@ -21,7 +19,7 @@ object TimerMetric {
     */
   def integral[A](toTags: A => List[String]): TimerMetric[A] = new TimerMetric[A] {
     def tags(value: A) = toTags(value)
-    def send(client: StatsDClient, aspect: String, value: A, duration: FiniteDuration, sampleRate: Option[Double], t: List[String]): Unit =
-      client.time(aspect, duration.toMillis, sampleRate.getOrElse(1d), t ++ tags(value): _*)
+    def send(client: StatsdClient, aspect: String, value: A, duration: FiniteDuration, sampleRate: Option[SampleRate], t: List[String]): Unit =
+      client.time(aspect, duration.toMillis, sampleRate.getOrElse(SampleRate.always), t ++ tags(value): _*)
   }
 }
