@@ -14,7 +14,7 @@ object DataPoint {
   def of[D: DataPoint]: DataPoint[D] = implicitly[DataPoint[D]]
 }
 
-case class Count(aspect: String, delta: Long, tags: Seq[String])
+case class Count(aspect: String, delta: Long)
 
 object Count {
   implicit val dataPoint_Count = new DataPoint[Count] with Sampling[Count] {
@@ -84,7 +84,7 @@ object Decrement {
   }
 }
 
-case class DoubleGauge(value: Double, tags: Seq[String])
+case class DoubleGauge(value: Double)
 
 object DoubleGauge {
   implicit val dataPoint_DoubleGauge = new DataPoint[DoubleGauge] with Sampling[DoubleGauge] {
@@ -98,7 +98,7 @@ object DoubleGauge {
   }
 }
 
-case class LongGauge(value: Long, tags: Seq[String])
+case class LongGauge(value: Long)
 
 object LongGauge {
   implicit val dataPoint_LongGauge = new DataPoint[LongGauge] with Sampling[LongGauge] {
@@ -112,7 +112,7 @@ object LongGauge {
   }
 }
 
-case class Time(aspect: String, timeInMs: Long, tags: Seq[String])
+case class Time(aspect: String, timeInMs: Long)
 
 object Time {
   implicit val dataPoint_Time = new DataPoint[Time] with Sampling[Time] {
@@ -126,7 +126,7 @@ object Time {
   }
 }
 
-case class DoubleHistogram(value: Double, tags: Seq[String])
+case class DoubleHistogram(value: Double)
 
 object DoubleHistogram {
   implicit val dataPoint_DoubleHistogram = new DataPoint[DoubleHistogram] with Sampling[DoubleHistogram] {
@@ -140,7 +140,7 @@ object DoubleHistogram {
   }
 }
 
-case class LongHistogram(value: Long, tags: Seq[String])
+case class LongHistogram(value: Long)
 
 object LongHistogram {
   implicit val dataPoint_LongHistogram = new DataPoint[LongHistogram] with Sampling[LongHistogram] {

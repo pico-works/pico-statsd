@@ -22,8 +22,9 @@ package object statsd {
   
   def counterSink[A](aspect: String, sampleRate: SampleRate, delta: Long, tags: String*)
                      (implicit c: StatsdClient): Sink[A] = {
+    val tagList = tags.toList
     Sink[A] { a =>
-      c.send(aspect, SampleRated(sampleRate, Count(aspect, delta, tags)))
+      c.send(aspect, SampleRated(sampleRate, Count(aspect, delta)), tagList)
     }
   }
   
