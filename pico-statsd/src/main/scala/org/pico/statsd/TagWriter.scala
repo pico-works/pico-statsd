@@ -6,6 +6,8 @@ class TagWriter(sb: StringBuilder) {
   def writeTag(tag: String): Unit = {
     if (written) {
       sb.append(",")
+    } else {
+      sb.append("|#")
     }
 
     sb.append(tag)
