@@ -1,7 +1,7 @@
 package org.pico.statsd.datapoint
 
 trait DataPointWritable[A] {
-  def write(sb: StringBuilder, prefix: String, aspect: String, a: A, writeExtraTags: (Boolean, StringBuilder) => Unit): Unit
+  def write(sb: StringBuilder, prefix: String, aspect: String, a: A, writeExtraTags: StringBuilder => Unit): Unit
 }
 
 object DataPointWritable {
@@ -9,7 +9,7 @@ object DataPointWritable {
 
   implicit def singletonDataPoints[D: DataPoint: Sampling]: DataPointWritable[D] = {
     new DataPointWritable[D] {
-      override def write(sb: StringBuilder, prefix: String, aspect: String, a: D, writeExtraTags: (Boolean, StringBuilder) => Unit): Unit = {
+      override def write(sb: StringBuilder, prefix: String, aspect: String, a: D, writeExtraTags: StringBuilder => Unit): Unit = {
         sb.append(prefix)
 
         if (prefix.nonEmpty && aspect.nonEmpty) {
@@ -22,7 +22,7 @@ object DataPointWritable {
         sb.append("|")
         DataPoint.of[D].writeType(sb)
         DataPoint.of[D].writeSampleRate(sb, a)
-        writeExtraTags(DataPoint.of[D].writeTags(sb, a), sb)
+        writeExtraTags(sb)
       }
     }
   }

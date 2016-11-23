@@ -8,8 +8,6 @@ trait DataPoint[A] {
   def writeValue(sb: StringBuilder, a: A): Unit
 
   def writeType(sb: StringBuilder): Unit
-
-  def writeTags(sb: StringBuilder, a: A): Boolean
 }
 
 object DataPoint {
@@ -27,8 +25,6 @@ object Count {
     override def writeType(sb: StringBuilder): Unit = sb.append("c")
 
     override def writeSampleRate(sb: StringBuilder, a: Count): Unit = ()
-
-    override def writeTags(sb: StringBuilder, a: Count): Boolean = false
   }
 }
 
@@ -43,8 +39,6 @@ object IncrementCounter {
     override def writeType(sb: StringBuilder): Unit = sb.append("c")
 
     override def writeSampleRate(sb: StringBuilder, a: IncrementCounter): Unit = ()
-
-    override def writeTags(sb: StringBuilder, a: IncrementCounter): Boolean = false
   }
 }
 
@@ -59,8 +53,6 @@ object Increment {
     override def writeType(sb: StringBuilder): Unit = sb.append("c")
 
     override def writeSampleRate(sb: StringBuilder, a: Increment): Unit = ()
-
-    override def writeTags(sb: StringBuilder, a: Increment): Boolean = false
   }
 }
 
@@ -75,8 +67,6 @@ object DecrementCounter {
     override def writeType(sb: StringBuilder): Unit = sb.append("c")
 
     override def writeSampleRate(sb: StringBuilder, a: DecrementCounter): Unit = ()
-
-    override def writeTags(sb: StringBuilder, a: DecrementCounter): Boolean = false
   }
 }
 
@@ -91,8 +81,6 @@ object Decrement {
     override def writeType(sb: StringBuilder): Unit = sb.append("c")
 
     override def writeSampleRate(sb: StringBuilder, a: Decrement): Unit = ()
-
-    override def writeTags(sb: StringBuilder, a: Decrement): Boolean = false
   }
 }
 
@@ -107,8 +95,6 @@ object DoubleGauge {
     override def writeType(sb: StringBuilder): Unit = sb.append("g")
 
     override def writeSampleRate(sb: StringBuilder, a: DoubleGauge): Unit = ()
-
-    override def writeTags(sb: StringBuilder, a: DoubleGauge): Boolean = false
   }
 }
 
@@ -123,8 +109,6 @@ object LongGauge {
     override def writeType(sb: StringBuilder): Unit = sb.append("g")
 
     override def writeSampleRate(sb: StringBuilder, a: LongGauge): Unit = ()
-
-    override def writeTags(sb: StringBuilder, a: LongGauge): Boolean = false
   }
 }
 
@@ -139,8 +123,6 @@ object Time {
     override def writeType(sb: StringBuilder): Unit = sb.append("ms")
 
     override def writeSampleRate(sb: StringBuilder, a: Time): Unit = ()
-
-    override def writeTags(sb: StringBuilder, a: Time): Boolean = false
   }
 }
 
@@ -155,8 +137,6 @@ object DoubleHistogram {
     override def writeType(sb: StringBuilder): Unit = sb.append("h")
 
     override def writeSampleRate(sb: StringBuilder, a: DoubleHistogram): Unit = ()
-
-    override def writeTags(sb: StringBuilder, a: DoubleHistogram): Boolean = false
   }
 }
 
@@ -171,8 +151,6 @@ object LongHistogram {
     override def writeType(sb: StringBuilder): Unit = sb.append("h")
 
     override def writeSampleRate(sb: StringBuilder, a: LongHistogram): Unit = ()
-
-    override def writeTags(sb: StringBuilder, a: LongHistogram): Boolean = false
   }
 }
 
@@ -187,7 +165,5 @@ object SampleRated {
     override def writeType(sb: StringBuilder): Unit = DataPoint.of[A].writeType(sb)
 
     override def writeSampleRate(sb: StringBuilder, a: SampleRated[A]): Unit = sb.append(a.sampleRate)
-
-    override def writeTags(sb: StringBuilder, a: SampleRated[A]): Boolean = DataPoint.of[A].writeTags(sb, a.value)
   }
 }
