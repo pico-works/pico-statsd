@@ -1,11 +1,12 @@
 package org.pico.statsd.syntax.event
 
-import com.timgroup.statsd.NoOpStatsDClient
 import org.pico.event.Bus
+import org.pico.statsd.NoopStatsdClient
 import org.specs2.mutable.Specification
 
 class TimersSpec extends Specification {
-  implicit val statsd = new NoOpStatsDClient()
+  implicit val statsd = NoopStatsdClient
+
   "Ensuring messages go through" >> {
     "with SinkSource" in {
       val bus = Bus[Int].withSimpleTimer("bus.test", None)
