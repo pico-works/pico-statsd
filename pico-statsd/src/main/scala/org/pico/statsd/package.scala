@@ -1,7 +1,7 @@
 package org.pico
 
 import org.pico.event.Sink
-import org.pico.statsd.datapoint.{Count, Sampler, Sampling}
+import org.pico.statsd.datapoint.{Count, Sampler}
 
 package object statsd {
   /**

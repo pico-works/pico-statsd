@@ -1,5 +1,6 @@
 package org.pico.statsd
 
+import java.io.{ByteArrayOutputStream, PrintWriter}
 import java.lang.{StringBuilder => JStringBuilder}
 import java.net.InetSocketAddress
 import java.util.concurrent.Callable
@@ -240,15 +241,21 @@ final class NonBlockingStatsdClient(
     */
   override def stop(): Unit = client.stop()
 
+  val baos = new ByteArrayOutputStream(1000)
+  val out = new PrintWriter(baos)
+
   override def send[D: DataPointWritable](aspect: String, sampleRate: SampleRate, d: D, tags: Seq[String]): Unit = {
-    val sb = new StringBuilder(100)
+    out.flush()
+    baos.reset()
 
     // TODO: Write more tags
-    DataPointWritable.of[D].write(sb, prefix, aspect, sampleRate, d) { tagWriter =>
+    DataPointWritable.of[D].write(out, prefix, aspect, sampleRate, d) { tagWriter =>
       tags.foreach(tagWriter.writeTag)
     }
 
-    client.send(sb.toString)
+    out.flush()
+
+    client.send(ByteArrayWindow(baos.toByteArray, 0, baos.size()))
   }
 
   override def sample[S: Sampler](s: S): Unit = {

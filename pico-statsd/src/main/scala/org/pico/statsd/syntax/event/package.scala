@@ -131,7 +131,7 @@ package object event {
     def withCounter(aspect: String, sampleRate: SampleRate, tags: String*)
                    (implicit c: StatsdClient): SinkSource[A, B] = {
       val samplingClient = c.sampledAt(sampleRate)
-      self += self.subscribe(a => samplingClient.send(aspect, Count(1L), tags))
+      self += self.subscribe(a => samplingClient.send(aspect, Increment(), tags))
       self
     }
   }
@@ -150,7 +150,7 @@ package object event {
     def withCounter(aspect: String, sampleRate: SampleRate, tags: String*)
                    (implicit c: StatsdClient): Source[A] = {
       val samplingClient = c.sampledAt(sampleRate)
-      self += self.effect(a => samplingClient.send(aspect, Count(1L), tags))
+      self += self.effect(a => samplingClient.send(aspect, Increment(), tags))
       self
     }
   }

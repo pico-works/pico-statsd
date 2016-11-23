@@ -3,6 +3,7 @@ package org.pico.statsd.datapoint
 import org.pico.statsd.StatsdClient
 import org.pico.statsd.syntax.sampler._
 
+@specialized(Long, Double)
 sealed trait Sampler[-A] { self =>
   def constantTags: List[String]
 

@@ -1,16 +1,18 @@
 package org.pico.statsd
 
-class TagWriter(sb: StringBuilder) {
+import java.io.PrintWriter
+
+class TagWriter(out: PrintWriter) {
   var written: Boolean = false
 
   def writeTag(tag: String): Unit = {
     if (written) {
-      sb.append(",")
+      out.print(",")
     } else {
-      sb.append("|#")
+      out.print("|#")
     }
 
-    sb.append(tag)
+    out.print(tag)
 
     written = true
   }

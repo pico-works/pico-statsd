@@ -1,9 +1,11 @@
 package org.pico.statsd.datapoint
 
+import java.io.PrintWriter
+
 import org.pico.statsd.{SampleRate, TagWriter}
 
 trait DataPointWritable[A] {
-  def write(sb: StringBuilder, prefix: String, aspect: String, sampleRate: SampleRate, a: A)(writeExtraTags: TagWriter => Unit): Unit
+  def write(out: PrintWriter, prefix: String, aspect: String, sampleRate: SampleRate, a: A)(writeExtraTags: TagWriter => Unit): Unit
 }
 
 object DataPointWritable {
@@ -11,25 +13,25 @@ object DataPointWritable {
 
   implicit def singletonDataPoints[D: DataPoint]: DataPointWritable[D] = {
     new DataPointWritable[D] {
-      override def write(sb: StringBuilder, prefix: String, aspect: String, sampleRate: SampleRate, a: D)(writeExtraTags: TagWriter => Unit): Unit = {
-        sb.append(prefix)
+      override def write(out: PrintWriter, prefix: String, aspect: String, sampleRate: SampleRate, a: D)(writeExtraTags: TagWriter => Unit): Unit = {
+        out.print(prefix)
 
         if (prefix.nonEmpty && aspect.nonEmpty) {
-          sb.append(".")
+          out.print(".")
         }
 
-        sb.append(aspect)
-        sb.append(":")
-        DataPoint.of[D].writeValue(sb, a)
-        sb.append("|")
-        DataPoint.of[D].writeType(sb)
+        out.print(aspect)
+        out.print(":")
+        DataPoint.of[D].writeValue(out, a)
+        out.print("|")
+        DataPoint.of[D].writeType(out)
 
         if (sampleRate.value != 1.0) {
-          sb.append("@")
-          sb.append(sampleRate.text)
+          out.print("@")
+          out.print(sampleRate.text)
         }
 
-        writeExtraTags(new TagWriter(sb))
+        writeExtraTags(new TagWriter(out))
       }
     }
   }
