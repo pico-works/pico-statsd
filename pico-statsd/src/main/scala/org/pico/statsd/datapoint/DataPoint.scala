@@ -191,33 +191,3 @@ object SampleRated {
     override def writeTags(sb: StringBuilder, a: SampleRated[A]): Boolean = DataPoint.of[A].writeTags(sb, a.value)
   }
 }
-
-case class DataPointContext[A](aspect: String, sampleRate: SampleRate, value: A, tags: String*)
-
-object DataPointContext {
-  implicit def dataPoints_DataPointContext[A: DataPoint] = new DataPoint[DataPointContext[A]] with Sampling[DataPointContext[A]] {
-    override def sampleRate(a: DataPointContext[A]): SampleRate = a.sampleRate
-
-    override def writeValue(sb: StringBuilder, a: DataPointContext[A]): Unit = DataPoint.of[A].writeValue(sb, a.value)
-
-    override def writeType(sb: StringBuilder): Unit = DataPoint.of[A].writeType(sb)
-
-    override def writeSampleRate(sb: StringBuilder, a: DataPointContext[A]): Unit = sb.append(a.sampleRate)
-
-    override def writeTags(sb: StringBuilder, a: DataPointContext[A]): Boolean = {
-      var written = DataPoint.of[A].writeTags(sb, a.value)
-
-      a.tags.foreach { tag =>
-        if (written) {
-          sb.append(",")
-        }
-
-        sb.append(tag)
-
-        written = true
-      }
-
-      written
-    }
-  }
-}
