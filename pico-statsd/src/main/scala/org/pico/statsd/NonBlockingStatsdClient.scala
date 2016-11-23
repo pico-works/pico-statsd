@@ -106,7 +106,9 @@ final class NonBlockingStatsdClient(
   }
 
   val constantTagsRendered = if (constantTags != null) {
-    Tags.tagString(constantTags, null)
+    val sb = new StringBuilder()
+    Tags.appendTagString(sb, constantTags, null)
+    sb.toString
   } else {
     null
   }
@@ -304,7 +306,9 @@ final class NonBlockingStatsdClient(
   /**
     * Generate a suffix conveying the given tag list to the client
     */
-  private def tagString(tags: Seq[String]): String = Tags.tagString(tags, constantTagsRendered)
+  private def appendTagString(sb: StringBuilder, tags: Seq[String]): Unit = {
+    Tags.appendTagString(sb, tags, constantTagsRendered)
+  }
 
   /**
     * Adjusts the specified counter by a given delta.
@@ -319,7 +323,16 @@ final class NonBlockingStatsdClient(
     * array of tags to be added to the data
     */
   override def count(aspect: String, delta: Long, tags: String*): Unit = {
-    client.send(prefix + aspect + ":" + delta + "|c" + tagString(tags))
+    val sb = new StringBuilder()
+
+    sb.append(prefix)
+    sb.append(aspect)
+    sb.append(":")
+    sb.append(delta)
+    sb.append("|c")
+    appendTagString(sb, tags)
+
+    client.send(sb.toString)
   }
 
   /**
@@ -327,7 +340,17 @@ final class NonBlockingStatsdClient(
     */
   override def count(aspect: String, delta: Long, sampleRate: Double, tags: String*): Unit = {
     if (validSample(sampleRate)) {
-      client.send(prefix + aspect + ":" + delta + "|c|@" + sampleRate + tagString(tags))
+      val sb = new StringBuilder()
+
+      sb.append(prefix)
+      sb.append(aspect)
+      sb.append(":")
+      sb.append(delta)
+      sb.append("|c|@")
+      sb.append(sampleRate)
+      appendTagString(sb, tags)
+
+      client.send(sb.toString)
     }
   }
 
@@ -414,8 +437,18 @@ final class NonBlockingStatsdClient(
     * array of tags to be added to the data
     */
   override def recordGaugeValue(aspect: String, value: Double, tags: String*): Unit = {
-    /* Intentionally using %s rather than %f here to avoid
-            * padding with extra 0s to represent precision */ client.send(prefix + aspect + ":" + StatsdNumberFormat.get.format(value) + "|g" + tagString(tags))
+    // Intentionally using %s rather than %f here to avoid padding with extra 0s to represent
+    // precision
+
+    val sb = new StringBuilder()
+    sb.append(prefix)
+    sb.append(aspect)
+    sb.append(":")
+    sb.append(StatsdNumberFormat.get.format(value))
+    sb.append("|g")
+    appendTagString(sb, tags)
+
+    client.send(sb.toString)
   }
 
   /**
@@ -423,7 +456,16 @@ final class NonBlockingStatsdClient(
     */
   override def recordGaugeValue(aspect: String, value: Double, sampleRate: Double, tags: String*): Unit = {
     if (validSample(sampleRate)) {
-      client.send(prefix + aspect + ":" + StatsdNumberFormat.get.format(value) + "|g|@" + sampleRate + tagString(tags))
+      val sb = new StringBuilder()
+      sb.append(prefix)
+      sb.append(aspect)
+      sb.append(":")
+      sb.append(StatsdNumberFormat.get.format(value))
+      sb.append("|g|@")
+      sb.append(sampleRate)
+      appendTagString(sb, tags)
+
+      client.send(sb.toString)
     }
   }
 
@@ -454,7 +496,16 @@ final class NonBlockingStatsdClient(
     * array of tags to be added to the data
     */
   override def recordGaugeValue(aspect: String, value: Long, tags: String*): Unit = {
-    client.send(prefix + aspect + ":" + value + "|g" + tagString(tags))
+    val sb = new StringBuilder()
+
+    sb.append(prefix)
+    sb.append(aspect)
+    sb.append(":")
+    sb.append(value)
+    sb.append("|g")
+    appendTagString(sb, tags)
+
+    client.send(sb.toString)
   }
 
   /**
@@ -462,7 +513,17 @@ final class NonBlockingStatsdClient(
     */
   override def recordGaugeValue(aspect: String, value: Long, sampleRate: Double, tags: String*): Unit = {
     if (validSample(sampleRate)) {
-      client.send(prefix + aspect + ":" + value + "|g|@" + sampleRate + tagString(tags))
+      val sb = new StringBuilder()
+
+      sb.append(prefix)
+      sb.append(aspect)
+      sb.append(":")
+      sb.append(value)
+      sb.append("|g|@")
+      sb.append(sampleRate)
+      appendTagString(sb, tags)
+
+      client.send(sb.toString)
     }
   }
 
@@ -493,7 +554,16 @@ final class NonBlockingStatsdClient(
     * array of tags to be added to the data
     */
   override def recordExecutionTime(aspect: String, timeInMs: Long, tags: String*): Unit = {
-    client.send(prefix + aspect + ":" + timeInMs + "|ms" + tagString(tags))
+    val sb = new StringBuilder()
+
+    sb.append(prefix)
+    sb.append(aspect)
+    sb.append(":")
+    sb.append(timeInMs)
+    sb.append("|ms")
+    appendTagString(sb, tags)
+
+    client.send(sb.toString())
   }
 
   /**
@@ -501,7 +571,15 @@ final class NonBlockingStatsdClient(
     */
   override def recordExecutionTime(aspect: String, timeInMs: Long, sampleRate: Double, tags: String*): Unit = {
     if (validSample(sampleRate)) {
-      client.send(prefix + aspect + ":" + timeInMs + "|ms|@" + sampleRate + tagString(tags))
+      val sb = new StringBuilder()
+      sb.append(prefix)
+      sb.append(aspect)
+      sb.append(":")
+      sb.append(timeInMs)
+      sb.append("|ms|@")
+      sb.append(sampleRate)
+      appendTagString(sb, tags)
+      client.send(sb.toString)
     }
   }
 
@@ -532,8 +610,18 @@ final class NonBlockingStatsdClient(
     * array of tags to be added to the data
     */
   override def recordHistogramValue(aspect: String, value: Double, tags: String*): Unit = {
-    /* Intentionally using %s rather than %f here to avoid
-            * padding with extra 0s to represent precision */ client.send(prefix + aspect + ":" + StatsdNumberFormat.get.format(value) + "|h" + tagString(tags))
+    // Intentionally using %s rather than %f here to avoid
+    // padding with extra 0s to represent precision
+    val sb = new StringBuilder()
+
+    sb.append(prefix)
+    sb.append(aspect)
+    sb.append(":")
+    sb.append(StatsdNumberFormat.get.format(value))
+    sb.append("|h")
+    appendTagString(sb, tags)
+
+    client.send(sb.toString)
   }
 
   /**
@@ -543,7 +631,17 @@ final class NonBlockingStatsdClient(
     if (validSample(sampleRate)) {
       // Intentionally using %s rather than %f here to avoid
       // padding with extra 0s to represent precision
-      client.send(prefix + aspect + ":" + StatsdNumberFormat.get.format(value) + "|h|@" + sampleRate + tagString(tags))
+      val sb = new StringBuilder()
+
+      sb.append(prefix)
+      sb.append(aspect)
+      sb.append(":")
+      sb.append(StatsdNumberFormat.get.format(value))
+      sb.append("|h|@")
+      sb.append(sampleRate)
+      appendTagString(sb, tags)
+
+      client.send(sb.toString)
     }
   }
 
@@ -574,7 +672,16 @@ final class NonBlockingStatsdClient(
     * array of tags to be added to the data
     */
   override def recordHistogramValue(aspect: String, value: Long, tags: String*): Unit = {
-    client.send(prefix + aspect + ":" + value + "|h" + tagString(tags))
+    val sb = new StringBuilder()
+
+    sb.append(prefix)
+    sb.append(aspect)
+    sb.append(":")
+    sb.append(value)
+    sb.append("|h")
+    appendTagString(sb, tags)
+
+    client.send(sb.toString)
   }
 
   /**
@@ -582,7 +689,17 @@ final class NonBlockingStatsdClient(
     */
   override def recordHistogramValue(aspect: String, value: Long, sampleRate: Double, tags: String*): Unit = {
     if (validSample(sampleRate)) {
-      client.send(prefix + aspect + ":" + value + "|h|@" + sampleRate + tagString(tags))
+      val sb = new StringBuilder()
+
+      sb.append(prefix)
+      sb.append(aspect)
+      sb.append(":")
+      sb.append(value)
+      sb.append("|h|@")
+      sb.append(sampleRate)
+      appendTagString(sb, tags)
+
+      client.send(sb.toString)
     }
   }
 
@@ -629,9 +746,22 @@ final class NonBlockingStatsdClient(
     * @see <a href="http://docs.datadoghq.com/guides/dogstatsd/#events-1">http://docs.datadoghq.com/guides/dogstatsd/#events-1</a>
     */
   override def recordEvent(event: Event, tags: String*): Unit = {
-    val title: String = escapeEventString(prefix + event.getTitle)
-    val text: String = escapeEventString(event.getText)
-    client.send("_e{" + title.length + "," + text.length + "}:" + title + "|" + text + eventMap(event) + tagString(tags))
+    val title = escapeEventString(prefix + event.getTitle)
+    val text = escapeEventString(event.getText)
+    val sb = new StringBuilder()
+
+    sb.append("_e{")
+    sb.append(title.length)
+    sb.append(",")
+    sb.append(text.length)
+    sb.append("}:")
+    sb.append(title)
+    sb.append("|")
+    sb.append(text)
+    sb.append(eventMap(event))
+    appendTagString(sb, tags)
+
+    client.send(sb.toString)
   }
 
   private def escapeEventString(title: String): String = title.replace("\n", "\\n")
@@ -650,24 +780,30 @@ final class NonBlockingStatsdClient(
 
   private def toStatsDString(sc: ServiceCheck): String = {
     // see http://docs.datadoghq.com/guides/dogstatsd/#service-checks
-    val sb: StringBuilder = new StringBuilder
+    val sb = new StringBuilder
+
     sb.append("_sc|")
     sb.append(sc.getName)
     sb.append("|")
     sb.append(sc.getStatus)
+
     if (sc.getTimestamp > 0) {
       sb.append("|d:")
       sb.append(sc.getTimestamp)
     }
+
     if (sc.getHostname != null) {
       sb.append("|h:")
       sb.append(sc.getHostname)
     }
-    sb.append(tagString(sc.getTags))
+
+    appendTagString(sb, sc.getTags)
+
     if (sc.getMessage != null) {
       sb.append("|m:")
       sb.append(sc.getEscapedMessage)
     }
+
     sb.toString
   }
 
@@ -697,7 +833,16 @@ final class NonBlockingStatsdClient(
   def recordSetValue(aspect: String, value: String, tags: String*): Unit = {
     // Documentation is light, but looking at dogstatsd source, we can send string values
     // here instead of numbers
-    client.send(prefix + aspect + ":" + value + "|s" + tagString(tags))
+    val sb = new StringBuilder()
+
+    sb.append(prefix)
+    sb.append(aspect)
+    sb.append(":")
+    sb.append(value)
+    sb.append("|s")
+    appendTagString(sb, tags)
+
+    client.send(sb.toString)
   }
 
   private def validSample(sampleRate: Double): Boolean = {
