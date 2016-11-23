@@ -25,19 +25,19 @@ case class IntegralHistogramSampler(aspect: String) extends Sampler[Long] {
 }
 
 case class FractionalHistogramSampler(aspect: String) extends Sampler[Double] {
-  override def sendIn(client: StatsdClient, a: Double, tags: (List[String]) => List[String]): Unit = {
+  override def sendIn(client: StatsdClient, a: Double, tags: List[String] => List[String]): Unit = {
     client.send(DoubleHistogram(aspect, a, tags(List.empty)))
   }
 }
 
 case class CounterSampler(aspect: String) extends Sampler[Long] {
-  override def sendIn(client: StatsdClient, a: Long, tags: (List[String]) => List[String]): Unit = {
+  override def sendIn(client: StatsdClient, a: Long, tags: List[String] => List[String]): Unit = {
     client.send(DoubleHistogram(aspect, a, tags(List.empty)))
   }
 }
 
 case class TimerSampler(aspect: String) extends Sampler[Long] {
-  override def sendIn(client: StatsdClient, a: Long, tags: (List[String]) => List[String]): Unit = {
+  override def sendIn(client: StatsdClient, a: Long, tags: List[String] => List[String]): Unit = {
     client.send(Time(aspect, a, tags(List.empty)))
   }
 }
