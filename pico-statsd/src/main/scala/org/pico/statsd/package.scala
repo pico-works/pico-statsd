@@ -1,7 +1,7 @@
 package org.pico
 
 import org.pico.event.Sink
-import org.pico.statsd.datapoint.{Count, Sampled}
+import org.pico.statsd.datapoint.{Count, SampleRated}
 
 package object statsd {
   /**
@@ -25,7 +25,7 @@ package object statsd {
   def counterSink[A](aspect: String, sampleRate: SampleRate, delta: Long, tags: String*)
                      (implicit c: StatsdClient): Sink[A] = {
     Sink[A] { a =>
-      c.send(Sampled(sampleRate, Count(aspect, delta, tags)))
+      c.send(SampleRated(sampleRate, Count(aspect, delta, tags)))
     }
   }
   

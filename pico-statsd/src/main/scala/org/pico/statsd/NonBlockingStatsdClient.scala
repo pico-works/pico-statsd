@@ -6,7 +6,7 @@ import java.text.DecimalFormat
 import java.util.concurrent.Callable
 
 import com.timgroup.statsd._
-import org.pico.statsd.datapoint.{DataPoints, Sampling}
+import org.pico.statsd.datapoint.{DataPointWritable, Sampling}
 
 /**
   * Create a new StatsD client communicating with a StatsD instance on the
@@ -281,11 +281,11 @@ final class NonBlockingStatsdClient(
     client.send(sb.toString)
   }
 
-  override def send[D: DataPoints: Sampling](d: D): Unit = {
+  override def send[D: DataPointWritable: Sampling](d: D): Unit = {
     if (validSample(Sampling.of[D].sampleRate(d))) {
       val sb = new StringBuilder()
       // TODO: Write more tags
-      DataPoints.of[D].write(sb, prefix, d, (_, _) => ())
+      DataPointWritable.of[D].write(sb, prefix, d, (_, _) => ())
       client.send(sb.toString)
     }
   }

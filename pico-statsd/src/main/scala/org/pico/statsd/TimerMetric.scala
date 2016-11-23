@@ -1,6 +1,6 @@
 package org.pico.statsd
 
-import org.pico.statsd.datapoint.{Sampled, Time}
+import org.pico.statsd.datapoint.{SampleRated, Time}
 
 import scala.concurrent.duration.FiniteDuration
 
@@ -29,7 +29,7 @@ object TimerMetric {
         value: A,
         duration: FiniteDuration,
         sampleRate: SampleRate, t: List[String]): Unit = {
-      client.send(Sampled(sampleRate, Time(aspect, duration.toMillis, t ++ tags(value))))
+      client.send(SampleRated(sampleRate, Time(aspect, duration.toMillis, t ++ tags(value))))
     }
   }
 }

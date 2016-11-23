@@ -218,23 +218,23 @@ object LongHistogram {
   }
 }
 
-case class Sampled[A](sampleRate: SampleRate, value: A)
+case class SampleRated[A](sampleRate: SampleRate, value: A)
 
-object Sampled {
-  implicit def dataPoint_SampleRate[A: DataPoint] = new DataPoint[Sampled[A]] with Sampling[Sampled[A]] {
-    override def sampleRate(a: Sampled[A]): SampleRate = a.sampleRate
+object SampleRated {
+  implicit def dataPoint_SampleRate[A: DataPoint] = new DataPoint[SampleRated[A]] with Sampling[SampleRated[A]] {
+    override def sampleRate(a: SampleRated[A]): SampleRate = a.sampleRate
 
     override def writePrefix(sb: StringBuilder, prefix: String): Unit = DataPoint.of[A].writePrefix(sb, prefix)
 
-    override def writeAspect(sb: StringBuilder, a: Sampled[A]): Unit = DataPoint.of[A].writeAspect(sb, a.value)
+    override def writeAspect(sb: StringBuilder, a: SampleRated[A]): Unit = DataPoint.of[A].writeAspect(sb, a.value)
 
-    override def writeValue(sb: StringBuilder, a: Sampled[A]): Unit = DataPoint.of[A].writeValue(sb, a.value)
+    override def writeValue(sb: StringBuilder, a: SampleRated[A]): Unit = DataPoint.of[A].writeValue(sb, a.value)
 
     override def writeType(sb: StringBuilder): Unit = DataPoint.of[A].writeType(sb)
 
-    override def writeSampleRate(sb: StringBuilder, a: Sampled[A]): Unit = sb.append(a.sampleRate)
+    override def writeSampleRate(sb: StringBuilder, a: SampleRated[A]): Unit = sb.append(a.sampleRate)
 
-    override def writeTags(sb: StringBuilder, a: Sampled[A]): Boolean = DataPoint.of[A].writeTags(sb, a.value)
+    override def writeTags(sb: StringBuilder, a: SampleRated[A]): Boolean = DataPoint.of[A].writeTags(sb, a.value)
   }
 }
 

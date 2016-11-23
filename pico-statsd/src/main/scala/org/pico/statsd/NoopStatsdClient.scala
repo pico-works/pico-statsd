@@ -1,5 +1,5 @@
 package org.pico.statsd
-import org.pico.statsd.datapoint.{DataPoints, Sampling}
+import org.pico.statsd.datapoint.{DataPointWritable, Sampling}
 
 object NoopStatsdClient extends StatsdClient {
   /**
@@ -10,5 +10,5 @@ object NoopStatsdClient extends StatsdClient {
 
   override def sendMetrics[A](prefix: String, sampleRate: SampleRate, extraTags: Seq[String], m: Metric[A])(value: A): Unit = ()
 
-  override def send[D: DataPoints : Sampling](d: D): Unit = ()
+  override def send[D: DataPointWritable: Sampling](d: D): Unit = ()
 }
