@@ -15,7 +15,7 @@ object MetricPerformanceMain {
   implicit def consumedRecordMetric[A]: Metric[Record] =
     Metric[Record](
       r => List(IntegralGauge("offset", r.offset), Counter("record.count", 1)),
-      x => List(s"topic:${x.topic.name}", s"partition:${x.partition}"))
+      x => List("topic:" + x.topic.name, "partition:" + x.partition))
 
   def main(args: Array[String]): Unit = {
     val record = Record(Topic("topic"), 1L, 1000L)
