@@ -6,6 +6,7 @@ import java.text.DecimalFormat
 import java.util.concurrent.Callable
 
 import com.timgroup.statsd._
+import org.pico.statsd.datapoint.{Count, DataPoint, DataPoints, Sampling}
 
 /**
   * Create a new StatsD client communicating with a StatsD instance on the
@@ -247,99 +248,6 @@ final class NonBlockingStatsdClient(
 
   val decimalFormat = new DecimalFormat("#.################")
 
-  /**
-    * Adjusts the specified counter by a given delta.
-    *
-    * <p>This method is non-blocking and is guaranteed not to throw an exception.</p>
-    *
-    * @param aspect
-    * the name of the counter to adjust
-    * @param delta
-    * the amount to adjust the counter by
-    * @param tags
-    * array of tags to be added to the data
-    */
-  override def count(aspect: String, delta: Long, tags: String*): Unit = {
-    val sb = new JStringBuilder()
-
-    sb.append(prefix)
-    sb.append(aspect)
-    sb.append(":")
-    sb.append(delta)
-    sb.append("|c")
-    appendTagString(sb, tags)
-
-    client.send(sb.toString)
-  }
-
-  override def count(aspect: String, delta: Long, sampleRate: SampleRate, tags: String*): Unit = {
-    if (validSample(sampleRate)) {
-      val sb = new JStringBuilder(50)
-
-      sb.append(prefix)
-      sb.append(aspect)
-      sb.append(":")
-      sb.append(delta)
-      sb.append("|c|@")
-      sb.append(sampleRate.text)
-      appendTagString(sb, tags)
-
-      client.send(sb.toString)
-    }
-  }
-
-  /**
-    * Increments the specified counter by one.
-    *
-    * <p>This method is non-blocking and is guaranteed not to throw an exception.</p>
-    *
-    * @param aspect
-    * the name of the counter to increment
-    * @param tags
-    * array of tags to be added to the data
-    */
-  override def incrementCounter(aspect: String, tags: String*): Unit = {
-    count(aspect, 1L, tags: _*)
-  }
-
-  override def incrementCounter(aspect: String, sampleRate: SampleRate, tags: String*): Unit = {
-    count(aspect, 1L, sampleRate, tags: _*)
-  }
-
-  override def increment(aspect: String, tags: String*): Unit = {
-    incrementCounter(aspect, tags: _*)
-  }
-
-  override def increment(aspect: String, sampleRate: SampleRate, tags: String*): Unit = {
-    incrementCounter(aspect, sampleRate, tags: _*)
-  }
-
-  /**
-    * Decrements the specified counter by one.
-    *
-    * <p>This method is non-blocking and is guaranteed not to throw an exception.</p>
-    *
-    * @param aspect
-    * the name of the counter to decrement
-    * @param tags
-    * array of tags to be added to the data
-    */
-  override def decrementCounter(aspect: String, tags: String*): Unit = {
-    count(aspect, -1, tags: _*)
-  }
-
-  override def decrementCounter(aspect: String, sampleRate: SampleRate, tags: String*): Unit = {
-    count(aspect, -1, sampleRate, tags: _*)
-  }
-
-  override def decrement(aspect: String, tags: String*): Unit = {
-    decrementCounter(aspect, tags: _*)
-  }
-
-  override def decrement(aspect: String, sampleRate: SampleRate, tags: String*): Unit = {
-    decrementCounter(aspect, sampleRate, tags: _*)
-  }
-
   override def gauge(aspect: String, value: Double, tags: String*): Unit = {
     // Intentionally using %s rather than %f here to avoid padding with extra 0s to represent
     // precision
@@ -488,8 +396,6 @@ final class NonBlockingStatsdClient(
     }
   }
 
-  private def escapeEventString(title: String): String = title.replace("\n", "\\n")
-
   /**
     * Records a value for the specified set.
     *
@@ -523,6 +429,15 @@ final class NonBlockingStatsdClient(
     client.send(sb.toString)
   }
 
+  override def send[D: DataPoints: Sampling](d: D): Unit = {
+    if (validSample(Sampling.of[D].sampleRate(d))) {
+      val sb = new StringBuilder()
+      // TODO: Write more tags
+      DataPoints.of[D].write(sb, prefix, d, (_, _) => ())
+      client.send(sb.toString)
+    }
+  }
+
   def sendMetrics[A](prefix: String, sampleRate: SampleRate, extraTags: Seq[String], m: Metric[A])(value: A): Unit = {
     def fullAspectName(aspect: String) = if (prefix == null || prefix.isEmpty) aspect else prefix + "." + aspect
 
@@ -533,7 +448,7 @@ final class NonBlockingStatsdClient(
       case FractionalGauge(aspect, v) => gauge(fullAspectName(aspect), v, sampleRate, tags: _*)
       case IntegralHistogram(aspect, v) => histogram(fullAspectName(aspect), v, sampleRate, tags: _*)
       case FractionalHistogram(aspect, v) => histogram(fullAspectName(aspect), v, sampleRate, tags: _*)
-      case Counter(aspect, v) => count(fullAspectName(aspect), v, sampleRate, tags: _*)
+      case Counter(aspect, v) => ??? // count(fullAspectName(aspect), v, sampleRate, tags: _*)
       case Timer(aspect, v) => time(fullAspectName(aspect), v.toMillis, sampleRate, tags: _*)
     }
   }

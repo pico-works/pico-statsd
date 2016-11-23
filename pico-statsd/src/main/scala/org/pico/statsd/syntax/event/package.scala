@@ -3,6 +3,7 @@ package org.pico.statsd.syntax
 import org.pico.disposal.std.autoCloseable._
 import org.pico.event.{Bus, SinkSource, Source}
 import org.pico.statsd._
+import org.pico.statsd.datapoint.{Count, Sampled}
 
 import scala.concurrent.duration.Deadline
 
@@ -118,18 +119,18 @@ package object event {
   implicit class SinkSourceOps_Counter_Rht98nT[A, B](val self: SinkSource[A, B]) extends AnyVal {
    
     @inline
-    def withCounter(aspect: String, delta: Long, sampleRate: Option[SampleRate], tags: String*)
+    def withCounter(aspect: String, delta: Long, sampleRate: SampleRate, tags: String*)
                    (implicit c: StatsdClient): SinkSource[A, B] = {
       val tagsArray = tags.toArray
-      self += self.subscribe(a => c.count(aspect, delta, sampleRate.getOrElse(SampleRate.always), tagsArray: _*))
+      self += self.subscribe(a => c.send(Sampled(sampleRate, Count(aspect, delta, tags))))
       self
     }
   
     @inline
-    def withCounter(aspect: String, sampleRate: Option[SampleRate], tags: String*)
+    def withCounter(aspect: String, sampleRate: SampleRate, tags: String*)
                    (implicit c: StatsdClient): SinkSource[A, B] = {
       val tagsArray = tags.toArray
-      self += self.subscribe(a => c.count(aspect, 1, sampleRate.getOrElse(SampleRate.always), tagsArray: _*))
+      self += self.subscribe(a => c.send(Sampled(sampleRate, Count(aspect, 1L, tags))))
       self
     }
   }
@@ -137,18 +138,18 @@ package object event {
   implicit class SourceOps_Counter_Rht98nT[A](val self: Source[A]) extends AnyVal {
     
     @inline
-    def withCounter(aspect: String, delta: Long, sampleRate: Option[SampleRate], tags: String*)
+    def withCounter(aspect: String, delta: Long, sampleRate: SampleRate, tags: String*)
                    (implicit c: StatsdClient): Source[A] = {
       val tagsArray = tags.toArray
-      self += self.effect(a => c.count(aspect, delta, sampleRate.getOrElse(SampleRate.always), tagsArray: _*))
+      self += self.effect(a => c.send(Sampled(sampleRate, Count(aspect, delta, tags))))
       self
     }
     
     @inline
-    def withCounter(aspect: String, sampleRate: Option[SampleRate], tags: String*)
+    def withCounter(aspect: String, sampleRate: SampleRate, tags: String*)
                    (implicit c: StatsdClient): Source[A] = {
       val tagsArray = tags.toArray
-      self += self.effect(a => c.count(aspect, 1, sampleRate.getOrElse(SampleRate.always), tagsArray: _*))
+      self += self.effect(a => c.send(Sampled(sampleRate, Count(aspect, 1L, tags))))
       self
     }
   }

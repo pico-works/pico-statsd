@@ -2,7 +2,7 @@ package org.pico.statsd.syntax.event
 
 import org.pico.disposal.{Auto, Disposable}
 import org.pico.event.Bus
-import org.pico.statsd.{NonBlockingStatsdClient, StatsdClient}
+import org.pico.statsd.{NonBlockingStatsdClient, SampleRate, StatsdClient}
 
 import scala.concurrent.duration.Deadline
 
@@ -15,7 +15,7 @@ object PerformanceMain {
 
       val bus = Bus[Unit]
 
-      bus.withCounter("consumer.record.count", None)
+      bus.withCounter("consumer.record.count", SampleRate.always)
 
       val before = Deadline.now
 
