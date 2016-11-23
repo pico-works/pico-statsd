@@ -33,7 +33,7 @@ public final class InternalStatsdClient {
         }
     });
 
-    private final BlockingQueue<String> queue;
+    private final BlockingQueue<ByteArrayWindow> queue;
 
     /**
      * Create a new StatsD client communicating with a StatsD instance on the
@@ -91,7 +91,7 @@ public final class InternalStatsdClient {
         } catch (final Exception e) {
             throw new StatsDClientException("Failed to start StatsD client", e);
         }
-        queue = new LinkedBlockingQueue<String>(queueSize);
+        queue = new LinkedBlockingQueue<ByteArrayWindow>(queueSize);
         executor.submit(new QueueConsumer(addressLookup));
     }
 
@@ -116,7 +116,7 @@ public final class InternalStatsdClient {
         }
     }
 
-    public void send(final String message) {
+    public void send(final ByteArrayWindow message) {
         queue.offer(message);
     }
 
@@ -135,17 +135,20 @@ public final class InternalStatsdClient {
         public void run() {
             while (!executor.isShutdown()) {
                 try {
-                    final String message = queue.poll(1, TimeUnit.SECONDS);
+                    final ByteArrayWindow message = queue.poll(1, TimeUnit.SECONDS);
                     if (null != message) {
                         final InetSocketAddress address = addressLookup.call();
-                        final byte[] data = message.getBytes(MESSAGE_CHARSET);
-                        if (sendBuffer.remaining() < (data.length + 1)) {
+
+                        if (sendBuffer.remaining() < (message.length() + 1)) {
                             blockingSend(address);
                         }
+
                         if (sendBuffer.position() > 0) {
                             sendBuffer.put((byte) '\n');
                         }
-                        sendBuffer.put(data);
+
+                        sendBuffer.put(message.array(), message.start(), message.length());
+
                         if (null == queue.peek()) {
                             blockingSend(address);
                         }
