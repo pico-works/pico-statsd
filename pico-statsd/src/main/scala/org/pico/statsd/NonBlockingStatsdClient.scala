@@ -239,48 +239,6 @@ final class NonBlockingStatsdClient(
     */
   override def stop(): Unit = client.stop()
 
-  /**
-    * Generate a suffix conveying the given tag list to the client
-    */
-  private def appendTagString(sb: JStringBuilder, tags: Seq[String]): Unit = {
-    Tags.appendTagString(sb, tags, constantTagsRendered)
-  }
-
-  val decimalFormat = new DecimalFormat("#.################")
-
-  /**
-    * Records a value for the specified set.
-    *
-    * Sets are used to count the number of unique elements in a group. If you want to track the number of
-    * unique visitor to your site, sets are a great way to do that.
-    *
-    * <p>This method is a DataDog extension, and may not work with other servers.</p>
-    *
-    * <p>This method is non-blocking and is guaranteed not to throw an exception.</p>
-    *
-    * @param aspect
-    * the name of the set
-    * @param value
-    * the value to track
-    * @param tags
-    * array of tags to be added to the data
-    * @see <a href="http://docs.datadoghq.com/guides/dogstatsd/#sets">http://docs.datadoghq.com/guides/dogstatsd/#sets</a>
-    */
-  def recordSetValue(aspect: String, value: String, tags: String*): Unit = {
-    // Documentation is light, but looking at dogstatsd source, we can send string values
-    // here instead of numbers
-    val sb = new JStringBuilder()
-
-    sb.append(prefix)
-    sb.append(aspect)
-    sb.append(":")
-    sb.append(value)
-    sb.append("|s")
-    appendTagString(sb, tags)
-
-    client.send(sb.toString)
-  }
-
   override def send[D: DataPointWritable](aspect: String, d: D): Unit = {
     val sb = new StringBuilder()
     // TODO: Write more tags
