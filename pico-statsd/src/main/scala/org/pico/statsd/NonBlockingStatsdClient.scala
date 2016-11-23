@@ -340,19 +340,7 @@ final class NonBlockingStatsdClient(
     decrementCounter(aspect, sampleRate, tags: _*)
   }
 
-  /**
-    * Records the latest fixed value for the specified named gauge.
-    *
-    * <p>This method is non-blocking and is guaranteed not to throw an exception.</p>
-    *
-    * @param aspect
-    * the name of the gauge
-    * @param value
-    * the new reading of the gauge
-    * @param tags
-    * array of tags to be added to the data
-    */
-  override def recordGaugeValue(aspect: String, value: Double, tags: String*): Unit = {
+  override def gauge(aspect: String, value: Double, tags: String*): Unit = {
     // Intentionally using %s rather than %f here to avoid padding with extra 0s to represent
     // precision
 
@@ -367,7 +355,7 @@ final class NonBlockingStatsdClient(
     client.send(sb.toString)
   }
 
-  override def recordGaugeValue(aspect: String, value: Double, sampleRate: SampleRate, tags: String*): Unit = {
+  override def gauge(aspect: String, value: Double, sampleRate: SampleRate, tags: String*): Unit = {
     if (validSample(sampleRate)) {
       val sb = new JStringBuilder()
       sb.append(prefix)
@@ -382,27 +370,7 @@ final class NonBlockingStatsdClient(
     }
   }
 
-  override def gauge(aspect: String, value: Double, tags: String*): Unit = {
-    recordGaugeValue(aspect, value, tags: _*)
-  }
-
-  override def gauge(aspect: String, value: Double, sampleRate: SampleRate, tags: String*): Unit = {
-    recordGaugeValue(aspect, value, sampleRate, tags: _*)
-  }
-
-  /**
-    * Records the latest fixed value for the specified named gauge.
-    *
-    * <p>This method is non-blocking and is guaranteed not to throw an exception.</p>
-    *
-    * @param aspect
-    * the name of the gauge
-    * @param value
-    * the new reading of the gauge
-    * @param tags
-    * array of tags to be added to the data
-    */
-  override def recordGaugeValue(aspect: String, value: Long, tags: String*): Unit = {
+  override def gauge(aspect: String, value: Long, tags: String*): Unit = {
     val sb = new JStringBuilder()
 
     sb.append(prefix)
@@ -415,7 +383,7 @@ final class NonBlockingStatsdClient(
     client.send(sb.toString)
   }
 
-  override def recordGaugeValue(aspect: String, value: Long, sampleRate: SampleRate, tags: String*): Unit = {
+  override def gauge(aspect: String, value: Long, sampleRate: SampleRate, tags: String*): Unit = {
     if (validSample(sampleRate)) {
       val sb = new JStringBuilder()
 
@@ -431,27 +399,7 @@ final class NonBlockingStatsdClient(
     }
   }
 
-  override def gauge(aspect: String, value: Long, tags: String*): Unit = {
-    recordGaugeValue(aspect, value, tags: _*)
-  }
-
-  override def gauge(aspect: String, value: Long, sampleRate: SampleRate, tags: String*): Unit = {
-    recordGaugeValue(aspect, value, sampleRate, tags: _*)
-  }
-
-  /**
-    * Records an execution time in milliseconds for the specified named operation.
-    *
-    * <p>This method is non-blocking and is guaranteed not to throw an exception.</p>
-    *
-    * @param aspect
-    * the name of the timed operation
-    * @param timeInMs
-    * the time in milliseconds
-    * @param tags
-    * array of tags to be added to the data
-    */
-  override def recordExecutionTime(aspect: String, timeInMs: Long, tags: String*): Unit = {
+  override def time(aspect: String, timeInMs: Long, tags: String*): Unit = {
     val sb = new JStringBuilder()
 
     sb.append(prefix)
@@ -464,7 +412,7 @@ final class NonBlockingStatsdClient(
     client.send(sb.toString)
   }
 
-  override def recordExecutionTime(aspect: String, timeInMs: Long, sampleRate: SampleRate, tags: String*): Unit = {
+  override def time(aspect: String, timeInMs: Long, sampleRate: SampleRate, tags: String*): Unit = {
     if (validSample(sampleRate)) {
       val sb = new JStringBuilder()
       sb.append(prefix)
@@ -478,27 +426,7 @@ final class NonBlockingStatsdClient(
     }
   }
 
-  override def time(aspect: String, value: Long, tags: String*): Unit = {
-    recordExecutionTime(aspect, value, tags: _*)
-  }
-
-  override def time(aspect: String, value: Long, sampleRate: SampleRate, tags: String*): Unit = {
-    recordExecutionTime(aspect, value, sampleRate, tags: _*)
-  }
-
-  /**
-    * Records a value for the specified named histogram.
-    *
-    * <p>This method is non-blocking and is guaranteed not to throw an exception.</p>
-    *
-    * @param aspect
-    * the name of the histogram
-    * @param value
-    * the value to be incorporated in the histogram
-    * @param tags
-    * array of tags to be added to the data
-    */
-  override def recordHistogramValue(aspect: String, value: Double, tags: String*): Unit = {
+  override def histogram(aspect: String, value: Double, tags: String*): Unit = {
     // Intentionally using %s rather than %f here to avoid
     // padding with extra 0s to represent precision
     val sb = new JStringBuilder()
@@ -513,7 +441,7 @@ final class NonBlockingStatsdClient(
     client.send(sb.toString)
   }
 
-  override def recordHistogramValue(aspect: String, value: Double, sampleRate: SampleRate, tags: String*): Unit = {
+  override def histogram(aspect: String, value: Double, sampleRate: SampleRate, tags: String*): Unit = {
     if (validSample(sampleRate)) {
       // Intentionally using %s rather than %f here to avoid
       // padding with extra 0s to represent precision
@@ -531,27 +459,7 @@ final class NonBlockingStatsdClient(
     }
   }
 
-  override def histogram(aspect: String, value: Double, tags: String*): Unit = {
-    recordHistogramValue(aspect, value, tags: _*)
-  }
-
-  override def histogram(aspect: String, value: Double, sampleRate: SampleRate, tags: String*): Unit = {
-    recordHistogramValue(aspect, value, sampleRate, tags: _*)
-  }
-
-  /**
-    * Records a value for the specified named histogram.
-    *
-    * <p>This method is non-blocking and is guaranteed not to throw an exception.</p>
-    *
-    * @param aspect
-    * the name of the histogram
-    * @param value
-    * the value to be incorporated in the histogram
-    * @param tags
-    * array of tags to be added to the data
-    */
-  override def recordHistogramValue(aspect: String, value: Long, tags: String*): Unit = {
+  override def histogram(aspect: String, value: Long, tags: String*): Unit = {
     val sb = new JStringBuilder()
 
     sb.append(prefix)
@@ -564,7 +472,7 @@ final class NonBlockingStatsdClient(
     client.send(sb.toString)
   }
 
-  override def recordHistogramValue(aspect: String, value: Long, sampleRate: SampleRate, tags: String*): Unit = {
+  override def histogram(aspect: String, value: Long, sampleRate: SampleRate, tags: String*): Unit = {
     if (validSample(sampleRate)) {
       val sb = new JStringBuilder()
 
@@ -580,105 +488,7 @@ final class NonBlockingStatsdClient(
     }
   }
 
-  override def histogram(aspect: String, value: Long, tags: String*): Unit = {
-    recordHistogramValue(aspect, value, tags: _*)
-  }
-
-  override def histogram(aspect: String, value: Long, sampleRate: SampleRate, tags: String*): Unit = {
-    recordHistogramValue(aspect, value, sampleRate, tags: _*)
-  }
-
-  private def eventMap(event: Event): String = {
-    val res: StringBuilder = new StringBuilder("")
-    val millisSinceEpoch: Long = event.getMillisSinceEpoch
-    if (millisSinceEpoch != -1) res.append("|d:").append(millisSinceEpoch / 1000)
-    val hostname: String = event.getHostname
-    if (hostname != null) res.append("|h:").append(hostname)
-    val aggregationKey: String = event.getAggregationKey
-    if (aggregationKey != null) res.append("|k:").append(aggregationKey)
-    val priority: String = event.getPriority
-    if (priority != null) res.append("|p:").append(priority)
-    val alertType: String = event.getAlertType
-    if (alertType != null) res.append("|t:").append(alertType)
-    res.toString
-  }
-
-  /**
-    * Records an event
-    *
-    * <p>This method is a DataDog extension, and may not work with other servers.</p>
-    *
-    * <p>This method is non-blocking and is guaranteed not to throw an exception.</p>
-    *
-    * @param event
-    * The event to record
-    * @param tags
-    * array of tags to be added to the data
-    * @see <a href="http://docs.datadoghq.com/guides/dogstatsd/#events-1">http://docs.datadoghq.com/guides/dogstatsd/#events-1</a>
-    */
-  override def recordEvent(event: Event, tags: String*): Unit = {
-    val title = escapeEventString(prefix + event.getTitle)
-    val text = escapeEventString(event.getText)
-    val sb = new JStringBuilder()
-
-    sb.append("_e{")
-    sb.append(title.length)
-    sb.append(",")
-    sb.append(text.length)
-    sb.append("}:")
-    sb.append(title)
-    sb.append("|")
-    sb.append(text)
-    sb.append(eventMap(event))
-    appendTagString(sb, tags)
-
-    client.send(sb.toString)
-  }
-
   private def escapeEventString(title: String): String = title.replace("\n", "\\n")
-
-  /**
-    * Records a run status for the specified named service check.
-    *
-    * <p>This method is a DataDog extension, and may not work with other servers.</p>
-    *
-    * <p>This method is non-blocking and is guaranteed not to throw an exception.</p>
-    *
-    * @param sc
-    * the service check object
-    */
-  override def recordServiceCheckRun(sc: ServiceCheck): Unit = client.send(toStatsDString(sc))
-
-  private def toStatsDString(sc: ServiceCheck): String = {
-    // see http://docs.datadoghq.com/guides/dogstatsd/#service-checks
-    val sb = new JStringBuilder
-
-    sb.append("_sc|")
-    sb.append(sc.getName)
-    sb.append("|")
-    sb.append(sc.getStatus)
-
-    if (sc.getTimestamp > 0) {
-      sb.append("|d:")
-      sb.append(sc.getTimestamp)
-    }
-
-    if (sc.getHostname != null) {
-      sb.append("|h:")
-      sb.append(sc.getHostname)
-    }
-
-    appendTagString(sb, sc.getTags)
-
-    if (sc.getMessage != null) {
-      sb.append("|m:")
-      sb.append(sc.getEscapedMessage)
-    }
-
-    sb.toString
-  }
-
-  override def serviceCheck(sc: ServiceCheck): Unit =recordServiceCheckRun(sc)
 
   /**
     * Records a value for the specified set.
