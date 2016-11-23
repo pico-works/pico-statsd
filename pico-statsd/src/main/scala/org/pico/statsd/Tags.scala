@@ -20,17 +20,16 @@ object Tags {
       } else {
         sb.append("|#")
 
-        var n: Int = tags.length - 1
+        var dirty = false
 
-        while (n >= 0) {
-          sb.append(tags(n))
-
-          if (n > 0) {
+        tags.foreach { tag =>
+          if (dirty) {
             sb.append(",")
           }
 
-          n -= 1
-          n + 1
+          sb.append(tag)
+
+          dirty = true
         }
       }
     }
