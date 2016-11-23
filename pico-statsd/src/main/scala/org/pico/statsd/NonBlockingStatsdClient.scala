@@ -236,9 +236,7 @@ final class NonBlockingStatsdClient(
     * Cleanly shut down this StatsD client. This method may throw an exception if
     * the socket cannot be closed.
     */
-  def stop() {
-    client.stop()
-  }
+  override def stop(): Unit = client.stop()
 
   /**
     * Generate a suffix conveying the given tag list to the client
