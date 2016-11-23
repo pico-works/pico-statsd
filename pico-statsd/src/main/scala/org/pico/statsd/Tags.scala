@@ -4,20 +4,20 @@ object Tags {
   /**
     * Generate a suffix conveying the given tag list to the client
     */
-  def tagString(tags: Seq[String], tagPrefix: String): String = {
+  def appendTagString(sb: StringBuilder, tags: Seq[String], tagPrefix: String): Unit = {
     if (tagPrefix != null) {
       if (tags == null || tags.isEmpty) {
-        tagPrefix
+        sb.append(tagPrefix)
       } else {
-        val sb = new StringBuilder(tagPrefix)
+        sb.append(tagPrefix)
         sb.append(",")
-        sb.toString
       }
     } else {
       if (tags == null || tags.isEmpty) {
-        ""
+        ()
       } else {
-        val sb = new StringBuilder("|#")
+        sb.append("|#")
+
         var n: Int = tags.length - 1
 
         while (n >= 0) {
@@ -30,8 +30,6 @@ object Tags {
           n -= 1
           n + 1
         }
-
-        sb.toString
       }
     }
   }
