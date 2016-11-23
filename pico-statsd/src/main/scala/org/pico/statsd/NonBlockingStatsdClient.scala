@@ -1,69 +1,11 @@
 package org.pico.statsd
 
-import com.timgroup.statsd._
+import java.lang.{StringBuilder => JStringBuilder}
 import java.net.InetSocketAddress
 import java.text.DecimalFormat
-import java.text.DecimalFormatSymbols
-import java.text.NumberFormat
-import java.util.Locale
 import java.util.concurrent.Callable
-import java.lang.{StringBuilder => JStringBuilder}
 
-/**
-  * A simple StatsD client implementation facilitating metrics recording.
-  *
-  * <p>Upon instantiation, this client will establish a socket connection to a StatsD instance
-  * running on the specified host and port. Metrics are then sent over this connection as they are
-  * received by the client.
-  * </p>
-  *
-  * <p>Three key methods are provided for the submission of data-points for the application under
-  * scrutiny:
-  * <ul>
-  * <li>{@link #incrementCounter} - adds one to the value of the specified named counter</li>
-  * <li>{@link #recordGaugeValue} - records the latest fixed value for the specified named gauge</li>
-  * <li>{@link #recordExecutionTime} - records an execution time in milliseconds for the specified named operation</li>
-  * <li>{@link #recordHistogramValue} - records a value, to be tracked with average, maximum, and percentiles</li>
-  * <li>{@link #recordEvent} - records an event</li>
-  * <li>{@link #recordSetValue} - records a value in a set</li>
-  * </ul>
-  * From the perspective of the application, these methods are non-blocking, with the resulting
-  * IO operations being carried out in a separate thread. Furthermore, these methods are guaranteed
-  * not to throw an exception which may disrupt application execution.
-  *
-  * <p>As part of a clean system shutdown, the {@link #stop()} method should be invoked
-  * on any StatsD clients.</p>
-  *
-  * @author Tom Denley, John Ky
-  *
-  */
-object NonBlockingStatsdClient {
-  /**
-    * Because NumberFormat is not thread-safe we cannot share instances across threads. Use a ThreadLocal to
-    * create one pre thread as this seems to offer a significant performance improvement over creating one per-thread:
-    * http://stackoverflow.com/a/1285297/2648
-    * https://github.com/indeedeng/java-dogstatsd-client/issues/4
-    */
-  private val NUMBER_FORMATTERS: ThreadLocal[NumberFormat] = new ThreadLocal[NumberFormat]() {
-    override protected def initialValue: NumberFormat = {
-      // Always create the formatter for the US locale in order to avoid this bug:
-      // https://github.com/indeedeng/java-dogstatsd-client/issues/3
-      val numberFormatter: NumberFormat = NumberFormat.getInstance(Locale.US)
-      numberFormatter.setGroupingUsed(false)
-      numberFormatter.setMaximumFractionDigits(6)
-      // we need to specify a value for Double.NaN that is recognized by dogStatsD
-      if (numberFormatter.isInstanceOf[DecimalFormat]) {
-        // better safe than a runtime error
-        val decimalFormat: DecimalFormat = numberFormatter.asInstanceOf[DecimalFormat]
-        val symbols: DecimalFormatSymbols = decimalFormat.getDecimalFormatSymbols
-        symbols.setNaN("NaN")
-        decimalFormat.setDecimalFormatSymbols(symbols)
-      }
-      numberFormatter
-    }
-  }
-}
-
+import com.timgroup.statsd._
 
 /**
   * Create a new StatsD client communicating with a StatsD instance on the
@@ -90,19 +32,13 @@ object NonBlockingStatsdClient {
   * if the client could not be started
   */
 final class NonBlockingStatsdClient(
-    var prefix: String = null,
+    val prefix: String = "",
     val queueSize: Int,
     var constantTags: Array[String] = null,
     val errorHandler: StatsDClientErrorHandler,
     val addressLookup: Callable[InetSocketAddress]) extends StatsdClient {
-  this.prefix = if ((prefix != null) && (!prefix.isEmpty)) {
-    prefix + "."
-  } else {
-    ""
-  }
-
   // Empty list should be null for faster comparison
-  if ((constantTags != null) && constantTags.isEmpty) {
+  if (constantTags != null && constantTags.isEmpty) {
     constantTags = null
   }
 
@@ -114,7 +50,7 @@ final class NonBlockingStatsdClient(
     null
   }
 
-  val client: InternalStatsdClient = new InternalStatsdClient(queueSize, errorHandler, addressLookup)
+  val client = new InternalStatsdClient(queueSize, errorHandler, addressLookup)
 
   /**
     * Create a new StatsD client communicating with a StatsD instance on the
@@ -338,9 +274,6 @@ final class NonBlockingStatsdClient(
     client.send(sb.toString)
   }
 
-  /**
-    * {@inheritDoc }
-    */
   override def count(aspect: String, delta: Long, sampleRate: SampleRate, tags: String*): Unit = {
     if (validSample(sampleRate)) {
       val sb = new JStringBuilder(50)
@@ -371,23 +304,14 @@ final class NonBlockingStatsdClient(
     count(aspect, 1L, tags: _*)
   }
 
-  /**
-    * {@inheritDoc }
-    */
   override def incrementCounter(aspect: String, sampleRate: SampleRate, tags: String*): Unit = {
     count(aspect, 1L, sampleRate, tags: _*)
   }
 
-  /**
-    * Convenience method equivalent to {@link #incrementCounter(String, String[])}.
-    */
   override def increment(aspect: String, tags: String*): Unit = {
     incrementCounter(aspect, tags: _*)
   }
 
-  /**
-    * {@inheritDoc }
-    */
   override def increment(aspect: String, sampleRate: SampleRate, tags: String*): Unit = {
     incrementCounter(aspect, sampleRate, tags: _*)
   }
@@ -406,23 +330,14 @@ final class NonBlockingStatsdClient(
     count(aspect, -1, tags: _*)
   }
 
-  /**
-    * {@inheritDoc }
-    */
   override def decrementCounter(aspect: String, sampleRate: SampleRate, tags: String*): Unit = {
     count(aspect, -1, sampleRate, tags: _*)
   }
 
-  /**
-    * Convenience method equivalent to {@link #decrementCounter(String, String[])}.
-    */
   override def decrement(aspect: String, tags: String*): Unit = {
     decrementCounter(aspect, tags: _*)
   }
 
-  /**
-    * {@inheritDoc }
-    */
   override def decrement(aspect: String, sampleRate: SampleRate, tags: String*): Unit = {
     decrementCounter(aspect, sampleRate, tags: _*)
   }
@@ -454,9 +369,6 @@ final class NonBlockingStatsdClient(
     client.send(sb.toString)
   }
 
-  /**
-    * {@inheritDoc }
-    */
   override def recordGaugeValue(aspect: String, value: Double, sampleRate: SampleRate, tags: String*): Unit = {
     if (validSample(sampleRate)) {
       val sb = new JStringBuilder()
@@ -472,16 +384,10 @@ final class NonBlockingStatsdClient(
     }
   }
 
-  /**
-    * Convenience method equivalent to {@link #recordGaugeValue(String, double, String[])}.
-    */
   override def gauge(aspect: String, value: Double, tags: String*): Unit = {
     recordGaugeValue(aspect, value, tags: _*)
   }
 
-  /**
-    * {@inheritDoc }
-    */
   override def gauge(aspect: String, value: Double, sampleRate: SampleRate, tags: String*): Unit = {
     recordGaugeValue(aspect, value, sampleRate, tags: _*)
   }
@@ -511,9 +417,6 @@ final class NonBlockingStatsdClient(
     client.send(sb.toString)
   }
 
-  /**
-    * {@inheritDoc }
-    */
   override def recordGaugeValue(aspect: String, value: Long, sampleRate: SampleRate, tags: String*): Unit = {
     if (validSample(sampleRate)) {
       val sb = new JStringBuilder()
@@ -530,16 +433,10 @@ final class NonBlockingStatsdClient(
     }
   }
 
-  /**
-    * Convenience method equivalent to {@link #recordGaugeValue(String, long, String[])}.
-    */
   override def gauge(aspect: String, value: Long, tags: String*): Unit = {
     recordGaugeValue(aspect, value, tags: _*)
   }
 
-  /**
-    * {@inheritDoc }
-    */
   override def gauge(aspect: String, value: Long, sampleRate: SampleRate, tags: String*): Unit = {
     recordGaugeValue(aspect, value, sampleRate, tags: _*)
   }
@@ -566,12 +463,9 @@ final class NonBlockingStatsdClient(
     sb.append("|ms")
     appendTagString(sb, tags)
 
-    client.send(sb.toString())
+    client.send(sb.toString)
   }
 
-  /**
-    * {@inheritDoc }
-    */
   override def recordExecutionTime(aspect: String, timeInMs: Long, sampleRate: SampleRate, tags: String*): Unit = {
     if (validSample(sampleRate)) {
       val sb = new JStringBuilder()
@@ -586,16 +480,10 @@ final class NonBlockingStatsdClient(
     }
   }
 
-  /**
-    * Convenience method equivalent to {@link #recordExecutionTime(String, long, String[])}.
-    */
   override def time(aspect: String, value: Long, tags: String*): Unit = {
     recordExecutionTime(aspect, value, tags: _*)
   }
 
-  /**
-    * {@inheritDoc }
-    */
   override def time(aspect: String, value: Long, sampleRate: SampleRate, tags: String*): Unit = {
     recordExecutionTime(aspect, value, sampleRate, tags: _*)
   }
@@ -627,9 +515,6 @@ final class NonBlockingStatsdClient(
     client.send(sb.toString)
   }
 
-  /**
-    * {@inheritDoc }
-    */
   override def recordHistogramValue(aspect: String, value: Double, sampleRate: SampleRate, tags: String*): Unit = {
     if (validSample(sampleRate)) {
       // Intentionally using %s rather than %f here to avoid
@@ -648,16 +533,10 @@ final class NonBlockingStatsdClient(
     }
   }
 
-  /**
-    * Convenience method equivalent to {@link #recordHistogramValue(String, double, String[])}.
-    */
   override def histogram(aspect: String, value: Double, tags: String*): Unit = {
     recordHistogramValue(aspect, value, tags: _*)
   }
 
-  /**
-    * {@inheritDoc }
-    */
   override def histogram(aspect: String, value: Double, sampleRate: SampleRate, tags: String*): Unit = {
     recordHistogramValue(aspect, value, sampleRate, tags: _*)
   }
@@ -687,9 +566,6 @@ final class NonBlockingStatsdClient(
     client.send(sb.toString)
   }
 
-  /**
-    * {@inheritDoc }
-    */
   override def recordHistogramValue(aspect: String, value: Long, sampleRate: SampleRate, tags: String*): Unit = {
     if (validSample(sampleRate)) {
       val sb = new JStringBuilder()
@@ -706,16 +582,10 @@ final class NonBlockingStatsdClient(
     }
   }
 
-  /**
-    * Convenience method equivalent to {@link #recordHistogramValue(String, long, String[])}.
-    */
   override def histogram(aspect: String, value: Long, tags: String*): Unit = {
     recordHistogramValue(aspect, value, tags: _*)
   }
 
-  /**
-    * {@inheritDoc }
-    */
   override def histogram(aspect: String, value: Long, sampleRate: SampleRate, tags: String*): Unit = {
     recordHistogramValue(aspect, value, sampleRate, tags: _*)
   }
@@ -810,9 +680,6 @@ final class NonBlockingStatsdClient(
     sb.toString
   }
 
-  /**
-    * Convenience method equivalent to {@link #recordServiceCheckRun(ServiceCheck sc)}.
-    */
   override def serviceCheck(sc: ServiceCheck): Unit =recordServiceCheckRun(sc)
 
   /**
