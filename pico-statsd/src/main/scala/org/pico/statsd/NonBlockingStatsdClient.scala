@@ -40,14 +40,6 @@ final class NonBlockingStatsdClient(
     val addressLookup: Callable[InetSocketAddress]) extends StatsdClient {
   override def sampleRate: SampleRate = SampleRate.always
 
-  val constantTagsRendered = if (constantTags != null) {
-    val sb = new JStringBuilder()
-    Tags.appendTagString(sb, constantTags, null)
-    sb.toString
-  } else {
-    null
-  }
-
   val client = new InternalStatsdClient(queueSize, errorHandler, addressLookup)
 
   /**
