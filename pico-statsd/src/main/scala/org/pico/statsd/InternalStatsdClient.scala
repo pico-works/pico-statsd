@@ -27,34 +27,33 @@ import java.util.concurrent._
   */
 final class InternalStatsdClient(
     val queueSize: Int,
-    val errorHandler: StatsDClientErrorHandler,
+    var errorHandler: StatsDClientErrorHandler,
     val addressLookup: Callable[InetSocketAddress]) extends Closeable {
-  if (errorHandler == null) handler = InternalStatsdClient.NO_OP_HANDLER
-  else handler = errorHandler
-  try
-    clientChannel = DatagramChannel.open
-
-  catch {
-    case e: Exception => {
-      throw new StatsDClientException("Failed to start StatsD client", e)
-    }
+  val handler: StatsDClientErrorHandler = if (errorHandler == null) {
+    InternalStatsdClient.NO_OP_HANDLER
+  } else {
+    errorHandler
   }
-  queue = new LinkedBlockingQueue[ByteArrayWindow](queueSize)
-  executor.submit(new InternalStatsdClient#QueueConsumer(addressLookup))
-  final private var clientChannel: DatagramChannel = null
-  final private var handler: StatsDClientErrorHandler = null
-  final private val executor: ExecutorService = Executors.newSingleThreadExecutor(new ThreadFactory() {
+
+  private val clientChannel = try {
+    DatagramChannel.open
+  } catch {
+    case e: Exception => throw new StatsDClientException("Failed to start StatsD client", e)
+  }
+
+  private val queue: BlockingQueue[ByteArrayWindow] = new LinkedBlockingQueue[ByteArrayWindow](queueSize)
+
+  private val executor: ExecutorService = Executors.newSingleThreadExecutor(new ThreadFactory {
     final private[statsd] val delegate: ThreadFactory = Executors.defaultThreadFactory
-    def newThread(r: Runnable): Thread
-    =
-    {
+    def newThread(r: Runnable): Thread = {
       val result: Thread = delegate.newThread(r)
       result.setName("StatsD-" + result.getName)
       result.setDaemon(true)
       result
     }
   })
-  final private var queue: BlockingQueue[ByteArrayWindow] = null
+
+  executor.submit(new QueueConsumer(addressLookup))
 
   /**
     * Create a new StatsD client communicating with a StatsD instance on the
@@ -106,7 +105,7 @@ final class InternalStatsdClient(
     final private val sendBuffer: ByteBuffer = ByteBuffer.allocate(InternalStatsdClient.PACKET_SIZE_BYTES)
 
     def run() {
-      while (!executor.isShutdown) try
+      while (!executor.isShutdown) try {
         val message: ByteArrayWindow = queue.poll(1, TimeUnit.SECONDS)
         if (null != message) {
           val address: InetSocketAddress = addressLookup.call
@@ -115,11 +114,8 @@ final class InternalStatsdClient(
           sendBuffer.put(message.array, message.start, message.length)
           if (null == queue.peek) blockingSend(address)
         }
-
-      catch {
-        case e: Exception => {
-          handler.handle(e)
-        }
+      } catch {
+        case e: Exception => handler.handle(e)
       }
     }
 
@@ -130,7 +126,10 @@ final class InternalStatsdClient(
       val sentBytes: Int = clientChannel.send(sendBuffer, address)
       sendBuffer.limit(sendBuffer.capacity)
       sendBuffer.rewind
-      if (sizeOfBuffer != sentBytes) handler.handle(new IOException(String.format("Could not send entirely stat %s to host %s:%d. Only sent %d bytes out of %d bytes", sendBuffer.toString, address.getHostName, address.getPort, sentBytes, sizeOfBuffer)))
+      if (sizeOfBuffer != sentBytes) {
+        handler.handle(new IOException(
+          s"Could not send entirely stat $sendBuffer to host ${address.getHostName}:${address.getPort}. Only sent $sentBytes bytes out of $sizeOfBuffer bytes"))
+      }
     }
   }
 
