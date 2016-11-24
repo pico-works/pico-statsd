@@ -55,7 +55,7 @@ final class NonBlockingStatsdClient(
     * the port of the targeted StatsD server
     * @param queueSize
     * the maximum amount of unprocessed messages in the BlockingQueue.
-    * @throws StatsDClientException
+    * @throws StatsdClientException
     * if the client could not be started
     */
   def this(prefix: String, hostname: String, port: Int, queueSize: Int) {
@@ -82,7 +82,7 @@ final class NonBlockingStatsdClient(
     * the host name of the targeted StatsD server
     * @param port
     * the port of the targeted StatsD server
-    * @throws StatsDClientException
+    * @throws StatsdClientException
     * if the client could not be started
     */
   def this(prefix: String, hostname: String, port: Int) {
@@ -110,7 +110,7 @@ final class NonBlockingStatsdClient(
     * tags to be added to all content sent
     * @param queueSize
     * the maximum amount of unprocessed messages in the BlockingQueue.
-    * @throws StatsDClientException
+    * @throws StatsdClientException
     * if the client could not be started
     */
   def this(prefix: String, hostname: String, port: Int, queueSize: Int, constantTags: Array[String]) {
@@ -135,7 +135,7 @@ final class NonBlockingStatsdClient(
     * the port of the targeted StatsD server
     * @param constantTags
     * tags to be added to all content sent
-    * @throws StatsDClientException
+    * @throws StatsdClientException
     * if the client could not be started
     */
   def this(prefix: String, hostname: String, port: Int, constantTags: String*) {
@@ -166,7 +166,7 @@ final class NonBlockingStatsdClient(
     * tags to be added to all content sent
     * @param queueSize
     * the maximum amount of unprocessed messages in the BlockingQueue.
-    * @throws StatsDClientException
+    * @throws StatsdClientException
     * if the client could not be started
     */
   def this(prefix: String, hostname: String, port: Int, queueSize: Int, constantTags: String*) {
@@ -196,7 +196,7 @@ final class NonBlockingStatsdClient(
     * the port of the targeted StatsD server
     * @param constantTags
     * tags to be added to all content sent
-    * @throws StatsDClientException
+    * @throws StatsdClientException
     * if the client could not be started
     */
   def this(prefix: String, hostname: String, port: Int, constantTags: Array[String]) {

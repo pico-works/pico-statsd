@@ -8,6 +8,9 @@ import java.nio.charset.Charset
 import java.util.concurrent._
 
 import org.pico.event.{Bus, Source}
+import org.pico.logging.Logger
+
+import scala.util.control.NonFatal
 
 /**
   * Create a new StatsD client communicating with a StatsD instance on the
@@ -27,8 +30,12 @@ import org.pico.event.{Bus, Source}
 final class InternalStatsdClient(
     val queueSize: Int,
     val addressLookup: () => InetSocketAddress) extends Closeable {
-  private val _errors = Bus[Exception]
-  val errors: Source[Exception] = _errors
+  val log = Logger[this.type]
+
+  log.info("Creating internal statsd client")
+
+  private val _errors = Bus[Throwable]
+  val errors: Source[Throwable] = _errors
 
   private val clientChannel = try {
     DatagramChannel.open
@@ -49,6 +56,8 @@ final class InternalStatsdClient(
   })
 
   executor.submit(new QueueConsumer(addressLookup))
+
+  log.info("Internal statsd client creation complete")
 
   /**
     * Create a new StatsD client communicating with a StatsD instance on the
@@ -99,17 +108,38 @@ final class InternalStatsdClient(
     final private val sendBuffer: ByteBuffer = ByteBuffer.allocate(InternalStatsdClient.PACKET_SIZE_BYTES)
 
     def run() {
-      while (!executor.isShutdown) try {
-        val message: ByteArrayWindow = queue.poll(1, TimeUnit.SECONDS)
-        if (null != message) {
-          val address: InetSocketAddress = addressLookup()
-          if (sendBuffer.remaining < (message.length + 1)) blockingSend(address)
-          if (sendBuffer.position > 0) sendBuffer.put('\n'.toByte)
-          sendBuffer.put(message.array, message.start, message.length)
-          if (null == queue.peek) blockingSend(address)
+      log.info("Statsd push thread started")
+
+      try {
+        while (!executor.isShutdown) {
+          try {
+            val message: ByteArrayWindow = queue.poll(1, TimeUnit.SECONDS)
+
+            if (null != message) {
+              val address: InetSocketAddress = addressLookup()
+
+              if (sendBuffer.remaining < (message.length + 1)) {
+                blockingSend(address)
+              }
+
+              if (sendBuffer.position > 0) {
+                sendBuffer.put('\n'.toByte)
+              }
+
+              sendBuffer.put(message.array, message.start, message.length)
+
+              if (null == queue.peek) {
+                blockingSend(address)
+              }
+            }
+          } catch {
+            case NonFatal(e) =>
+              log.warn("Error in statsd push thread", e)
+              _errors.publish(e)
+          }
         }
       } catch {
-        case e: Exception => _errors.publish(e)
+        case e: Throwable => log.warn("Fatal error in statsd push thread", e)
       }
     }
 
@@ -120,13 +150,13 @@ final class InternalStatsdClient(
       val sentBytes: Int = clientChannel.send(sendBuffer, address)
       sendBuffer.limit(sendBuffer.capacity)
       sendBuffer.rewind
+
       if (sizeOfBuffer != sentBytes) {
         _errors.publish(new IOException(
           s"Could not send entirely stat $sendBuffer to host ${address.getHostName}:${address.getPort}. Only sent $sentBytes bytes out of $sizeOfBuffer bytes"))
       }
     }
   }
-
 }
 
 object InternalStatsdClient {
