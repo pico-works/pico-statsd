@@ -35,15 +35,10 @@ import org.pico.statsd.datapoint.{DataPointWritable, Sampler}
 final class NonBlockingStatsdClient(
     val prefix: String = "",
     val queueSize: Int,
-    var constantTags: Array[String] = null,
+    var constantTags: Array[String] = Array.empty,
     val errorHandler: StatsDClientErrorHandler,
     val addressLookup: Callable[InetSocketAddress]) extends StatsdClient {
   override def sampleRate: SampleRate = SampleRate.always
-
-  // Empty list should be null for faster comparison
-  if (constantTags != null && constantTags.isEmpty) {
-    constantTags = null
-  }
 
   val constantTagsRendered = if (constantTags != null) {
     val sb = new JStringBuilder()
@@ -239,7 +234,7 @@ final class NonBlockingStatsdClient(
     * Cleanly shut down this StatsD client. This method may throw an exception if
     * the socket cannot be closed.
     */
-  override def close(): Unit = client.stop()
+  override def close(): Unit = client.close()
 
   val baos = new ByteArrayOutputStream(1000)
   val out = new PrintWriter(baos)
@@ -250,6 +245,7 @@ final class NonBlockingStatsdClient(
 
     // TODO: Write more tags
     DataPointWritable.of[D].write(out, prefix, aspect, sampleRate, d) { tagWriter =>
+      constantTags.foreach(tagWriter.writeTag)
       tags.foreach(tagWriter.writeTag)
     }
 
