@@ -4,6 +4,7 @@ import java.io.{ByteArrayOutputStream, PrintWriter}
 import java.net.InetSocketAddress
 
 import org.pico.statsd.datapoint.{DataPointWritable, Sampler}
+import org.pico.statsd.impl.ByteArrayWindow
 
 /**
   * Create a new StatsD client communicating with a StatsD instance on the

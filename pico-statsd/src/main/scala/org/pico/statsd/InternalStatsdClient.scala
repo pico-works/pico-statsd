@@ -9,6 +9,7 @@ import java.util.concurrent._
 
 import org.pico.event.{Bus, Source}
 import org.pico.logging.Logger
+import org.pico.statsd.impl.ByteArrayWindow
 
 import scala.util.control.NonFatal
 
