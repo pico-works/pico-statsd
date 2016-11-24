@@ -4,7 +4,7 @@ import java.io.{ByteArrayOutputStream, PrintWriter}
 import java.net.InetSocketAddress
 
 import org.pico.statsd.datapoint.Sampler
-import org.pico.statsd.impl.{ByteArrayWindow, Printable}
+import org.pico.statsd.impl.{ByteArrayWindow, Inet, Printable}
 
 /**
   * Create a new StatsD client communicating with a StatsD instance on the
@@ -64,7 +64,7 @@ final class NonBlockingStatsdClient(
       prefix,
       Integer.MAX_VALUE,
       Array.empty[String],
-      Inet.staticStatsDAddressResolution(hostname, port))
+      Inet.staticStatsdAddressResolution(hostname, port))
   }
 
   /**
@@ -115,7 +115,7 @@ final class NonBlockingStatsdClient(
     * if the client could not be started
     */
   def this(prefix: String, hostname: String, port: Int, queueSize: Int, constantTags: Array[String]) {
-    this(prefix, queueSize, constantTags, Inet.staticStatsDAddressResolution(hostname, port))
+    this(prefix, queueSize, constantTags, Inet.staticStatsdAddressResolution(hostname, port))
   }
 
   /**
@@ -144,7 +144,7 @@ final class NonBlockingStatsdClient(
       prefix,
       Integer.MAX_VALUE,
       constantTags.toArray,
-      Inet.staticStatsDAddressResolution(hostname, port))
+      Inet.staticStatsdAddressResolution(hostname, port))
   }
 
   /**
@@ -175,7 +175,7 @@ final class NonBlockingStatsdClient(
       prefix,
       Integer.MAX_VALUE,
       constantTags.toArray,
-      Inet.staticStatsDAddressResolution(hostname, port))
+      Inet.staticStatsdAddressResolution(hostname, port))
   }
 
   /**
@@ -201,7 +201,7 @@ final class NonBlockingStatsdClient(
     * if the client could not be started
     */
   def this(prefix: String, hostname: String, port: Int, constantTags: Array[String]) {
-    this(prefix, Integer.MAX_VALUE, constantTags, Inet.staticStatsDAddressResolution(hostname, port))
+    this(prefix, Integer.MAX_VALUE, constantTags, Inet.staticStatsdAddressResolution(hostname, port))
   }
 
   /**

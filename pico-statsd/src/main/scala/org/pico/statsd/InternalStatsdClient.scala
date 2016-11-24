@@ -9,7 +9,7 @@ import java.util.concurrent._
 
 import org.pico.event.{Bus, Source}
 import org.pico.logging.Logger
-import org.pico.statsd.impl.ByteArrayWindow
+import org.pico.statsd.impl.{ByteArrayWindow, Inet}
 
 import scala.util.control.NonFatal
 
@@ -77,7 +77,7 @@ final class InternalStatsdClient(
     * @throws StatsdClientException if the client could not be started
     */
   def this(hostname: String, port: Int, queueSize: Int) {
-    this(queueSize, Inet.staticStatsDAddressResolution(hostname, port))
+    this(queueSize, Inet.staticStatsdAddressResolution(hostname, port))
   }
 
   /**
