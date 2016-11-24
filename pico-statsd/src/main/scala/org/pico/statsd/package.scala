@@ -1,7 +1,7 @@
 package org.pico
 
 import org.pico.event.Sink
-import org.pico.statsd.datapoint.{Count, Sampler}
+import org.pico.statsd.datapoint.{Count, Increment, Sampler}
 
 package object statsd {
   /**
@@ -9,8 +9,7 @@ package object statsd {
     * and do what you want
     * @param f handle the message using a StatsdClient provided
     */
-  def statsSink[A](f: (StatsdClient, A) => Unit)
-               (implicit c: StatsdClient): Sink[A] = {
+  def statsSink[A](f: (StatsdClient, A) => Unit)(implicit c: StatsdClient): Sink[A] = {
     Sink[A](a => f(c, a))
   }
   
@@ -18,16 +17,11 @@ package object statsd {
     Sink[A](c.sample[A])
   }
   
-  def counterSink[A](aspect: String, sampleRate: SampleRate, delta: Long, tags: String*)
-                     (implicit c: StatsdClient): Sink[A] = {
-    val tagList = tags.toList
-    Sink[A] { a =>
-      c.sampledAt(sampleRate).send(aspect, Count(delta), tagList)
-    }
+  def counterSink[A](aspect: String, sampleRate: SampleRate, delta: Long, tags: String*)(implicit c: StatsdClient): Sink[A] = {
+    Sink[A](a => c.sampledAt(sampleRate).send(aspect, Count(delta), tags))
   }
   
-  def counterSink[A](aspect: String, sampleRate: SampleRate, tags: String*)
-                     (implicit c: StatsdClient): Sink[A] = {
-    counterSink[A](aspect, sampleRate, 1, tags: _*)
+  def counterSink[A](aspect: String, sampleRate: SampleRate, tags: String*)(implicit c: StatsdClient): Sink[A] = {
+    Sink[A](a => c.sampledAt(sampleRate).send(aspect, Increment(), tags))
   }
 }
