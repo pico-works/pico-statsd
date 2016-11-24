@@ -4,7 +4,7 @@ import org.pico.statsd.StatsdClient
 import org.pico.statsd.syntax.sampler._
 
 @specialized(Long, Double)
-sealed trait Sampler[-A] { self =>
+trait Sampler[-A] { self =>
   def constantTags: List[String]
 
   def deriveTags(a: A, tags: List[String]): List[String]

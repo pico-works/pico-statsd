@@ -8,7 +8,7 @@ import org.pico.statsd.datapoint._
 import scala.concurrent.duration.Deadline
 
 object MetricPerformanceMain {
-  implicit val statsDClientDisposable = Disposable[StatsdClient](_.stop())
+  implicit val statsDClientDisposable = Disposable[StatsdClient](_.close())
 
   case class Topic(name: String) extends AnyVal
 
