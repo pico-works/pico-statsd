@@ -37,7 +37,7 @@ final class NonBlockingStatsdClient(
     val queueSize: Int,
     var constantTags: Array[String] = Array.empty,
     val errorHandler: StatsDClientErrorHandler,
-    val addressLookup: Callable[InetSocketAddress]) extends StatsdClient {
+    val addressLookup: () => InetSocketAddress) extends StatsdClient {
   override def sampleRate: SampleRate = SampleRate.always
 
   val client = new InternalStatsdClient(queueSize, errorHandler, addressLookup)

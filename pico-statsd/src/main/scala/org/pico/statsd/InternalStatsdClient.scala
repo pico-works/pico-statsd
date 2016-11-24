@@ -28,7 +28,7 @@ import java.util.concurrent._
 final class InternalStatsdClient(
     val queueSize: Int,
     var errorHandler: StatsDClientErrorHandler,
-    val addressLookup: Callable[InetSocketAddress]) extends Closeable {
+    val addressLookup: () => InetSocketAddress) extends Closeable {
   val handler: StatsDClientErrorHandler = if (errorHandler == null) {
     InternalStatsdClient.NO_OP_HANDLER
   } else {
@@ -101,14 +101,14 @@ final class InternalStatsdClient(
     queue.offer(message)
   }
 
-  private class QueueConsumer private[statsd](val addressLookup: Callable[InetSocketAddress]) extends Runnable {
+  private class QueueConsumer private[statsd](val addressLookup: () => InetSocketAddress) extends Runnable {
     final private val sendBuffer: ByteBuffer = ByteBuffer.allocate(InternalStatsdClient.PACKET_SIZE_BYTES)
 
     def run() {
       while (!executor.isShutdown) try {
         val message: ByteArrayWindow = queue.poll(1, TimeUnit.SECONDS)
         if (null != message) {
-          val address: InetSocketAddress = addressLookup.call
+          val address: InetSocketAddress = addressLookup()
           if (sendBuffer.remaining < (message.length + 1)) blockingSend(address)
           if (sendBuffer.position > 0) sendBuffer.put('\n'.toByte)
           sendBuffer.put(message.array, message.start, message.length)
