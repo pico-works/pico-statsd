@@ -23,7 +23,6 @@ import org.pico.statsd.datapoint.{DataPointWritable, Sampler}
   * the prefix to apply to keys sent via this client
   * @param constantTags
   * tags to be added to all content sent
-  * @param errorHandler
   * handler to use when an exception occurs during usage, may be null to indicate noop
   * @param addressLookup
   * yields the IP address and socket of the StatsD server
@@ -36,19 +35,10 @@ final class NonBlockingStatsdClient(
     val prefix: String = "",
     val queueSize: Int,
     var constantTags: Array[String] = Array.empty,
-    val errorHandler: StatsDClientErrorHandler,
-    val addressLookup: Callable[InetSocketAddress]) extends StatsdClient {
+    val addressLookup: () => InetSocketAddress) extends StatsdClient {
   override def sampleRate: SampleRate = SampleRate.always
 
-  val constantTagsRendered = if (constantTags != null) {
-    val sb = new JStringBuilder()
-    Tags.appendTagString(sb, constantTags, null)
-    sb.toString
-  } else {
-    null
-  }
-
-  val client = new InternalStatsdClient(queueSize, errorHandler, addressLookup)
+  val client = new InternalStatsdClient(queueSize, addressLookup)
 
   /**
     * Create a new StatsD client communicating with a StatsD instance on the
@@ -76,9 +66,6 @@ final class NonBlockingStatsdClient(
       prefix,
       Integer.MAX_VALUE,
       Array.empty[String],
-      new StatsDClientErrorHandler {
-        override def handle(exception: Exception): Unit = ()
-      },
       Inet.staticStatsDAddressResolution(hostname, port))
   }
 
@@ -124,15 +111,13 @@ final class NonBlockingStatsdClient(
     * the port of the targeted StatsD server
     * @param constantTags
     * tags to be added to all content sent
-    * @param errorHandler
-    * handler to use when an exception occurs during usage, may be null to indicate noop
     * @param queueSize
     * the maximum amount of unprocessed messages in the BlockingQueue.
     * @throws StatsDClientException
     * if the client could not be started
     */
-  def this(prefix: String, hostname: String, port: Int, queueSize: Int, constantTags: Array[String], errorHandler: StatsDClientErrorHandler) {
-    this(prefix, queueSize, constantTags, errorHandler, Inet.staticStatsDAddressResolution(hostname, port))
+  def this(prefix: String, hostname: String, port: Int, queueSize: Int, constantTags: Array[String]) {
+    this(prefix, queueSize, constantTags, Inet.staticStatsDAddressResolution(hostname, port))
   }
 
   /**
@@ -161,9 +146,6 @@ final class NonBlockingStatsdClient(
       prefix,
       Integer.MAX_VALUE,
       constantTags.toArray,
-      new StatsDClientErrorHandler {
-        override def handle(exception: Exception): Unit = ()
-      },
       Inet.staticStatsDAddressResolution(hostname, port))
   }
 
@@ -195,11 +177,7 @@ final class NonBlockingStatsdClient(
       prefix,
       Integer.MAX_VALUE,
       constantTags.toArray,
-      new StatsDClientErrorHandler {
-        override def handle(exception: Exception): Unit = ()
-      },
       Inet.staticStatsDAddressResolution(hostname, port))
-
   }
 
   /**
@@ -221,13 +199,11 @@ final class NonBlockingStatsdClient(
     * the port of the targeted StatsD server
     * @param constantTags
     * tags to be added to all content sent
-    * @param errorHandler
-    * handler to use when an exception occurs during usage, may be null to indicate noop
     * @throws StatsDClientException
     * if the client could not be started
     */
-  def this(prefix: String, hostname: String, port: Int, constantTags: Array[String], errorHandler: StatsDClientErrorHandler) {
-    this(prefix, Integer.MAX_VALUE, constantTags, errorHandler, Inet.staticStatsDAddressResolution(hostname, port))
+  def this(prefix: String, hostname: String, port: Int, constantTags: Array[String]) {
+    this(prefix, Integer.MAX_VALUE, constantTags, Inet.staticStatsDAddressResolution(hostname, port))
   }
 
   /**
