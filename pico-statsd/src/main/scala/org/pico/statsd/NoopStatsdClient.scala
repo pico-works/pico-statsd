@@ -1,4 +1,8 @@
 package org.pico.statsd
+
+import java.nio.ByteBuffer
+
+import org.pico.event.{ClosedSource, Source}
 import org.pico.statsd.datapoint.Sampler
 import org.pico.statsd.impl.Printable
 
@@ -16,4 +20,6 @@ object NoopStatsdClient extends StatsdClient {
   override def sampleRate: SampleRate = SampleRate.never
 
   override def sampledAt(sampleRate: SampleRate): StatsdClient = this
+
+  override def messages: Source[ByteBuffer] = ClosedSource
 }

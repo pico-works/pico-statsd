@@ -1,10 +1,10 @@
 package org.pico.statsd
 
-import java.io.{ByteArrayOutputStream, PrintWriter}
-import java.net.InetSocketAddress
+import java.nio.ByteBuffer
 
+import org.pico.event.Source
 import org.pico.statsd.datapoint.Sampler
-import org.pico.statsd.impl.{ByteArrayWindow, Inet, Printable}
+import org.pico.statsd.impl.Printable
 
 /**
   * Create a new StatsD client communicating with a StatsD instance on the
@@ -22,8 +22,6 @@ import org.pico.statsd.impl.{ByteArrayWindow, Inet, Printable}
   * @param constantTags
   * tags to be added to all content sent
   * handler to use when an exception occurs during usage, may be null to indicate noop
-  * @param addressLookup
-  * yields the IP address and socket of the StatsD server
   * @param queueSize
   * the maximum amount of unprocessed messages in the BlockingQueue.
   * @throws StatsdClientException
@@ -32,11 +30,10 @@ import org.pico.statsd.impl.{ByteArrayWindow, Inet, Printable}
 final class NonBlockingStatsdClient(
     val prefix: String = "",
     val queueSize: Int,
-    var constantTags: Array[String] = Array.empty,
-    val addressLookup: () => InetSocketAddress) extends StatsdClient {
+    var constantTags: Array[String] = Array.empty) extends StatsdClient {
   override def sampleRate: SampleRate = SampleRate.always
 
-  val client = new InternalStatsdClient(queueSize, addressLookup)
+  val client = new InternalStatsdClient(queueSize)
 
   /**
     * Create a new StatsD client communicating with a StatsD instance on the
@@ -50,158 +47,35 @@ final class NonBlockingStatsdClient(
     *
     * @param prefix
     * the prefix to apply to keys sent via this client
-    * @param hostname
-    * the host name of the targeted StatsD server
-    * @param port
-    * the port of the targeted StatsD server
-    * @param queueSize
-    * the maximum amount of unprocessed messages in the BlockingQueue.
     * @throws StatsdClientException
     * if the client could not be started
     */
-  def this(prefix: String, hostname: String, port: Int, queueSize: Int) {
+  def this(prefix: String) {
+    this(prefix, Integer.MAX_VALUE)
+  }
+
+  /**
+    * Create a new StatsD client communicating with a StatsD instance on the
+    * specified host and port. All messages send via this client will have
+    * their keys prefixed with the specified string. The new client will
+    * attempt to open a connection to the StatsD server immediately upon
+    * instantiation, and may throw an exception if that a connection cannot
+    * be established. Once a client has been instantiated in this way, all
+    * exceptions thrown during subsequent usage are consumed, guaranteeing
+    * that failures in metrics will not affect normal code execution.
+    *
+    * @param prefix
+    * the prefix to apply to keys sent via this client
+    * @param constantTags
+    * tags to be added to all content sent
+    * @throws StatsdClientException
+    * if the client could not be started
+    */
+  def this(prefix: String, constantTags: String*) {
     this(
       prefix,
       Integer.MAX_VALUE,
-      Array.empty[String],
-      Inet.staticStatsdAddressResolution(hostname, port))
-  }
-
-  /**
-    * Create a new StatsD client communicating with a StatsD instance on the
-    * specified host and port. All messages send via this client will have
-    * their keys prefixed with the specified string. The new client will
-    * attempt to open a connection to the StatsD server immediately upon
-    * instantiation, and may throw an exception if that a connection cannot
-    * be established. Once a client has been instantiated in this way, all
-    * exceptions thrown during subsequent usage are consumed, guaranteeing
-    * that failures in metrics will not affect normal code execution.
-    *
-    * @param prefix
-    * the prefix to apply to keys sent via this client
-    * @param hostname
-    * the host name of the targeted StatsD server
-    * @param port
-    * the port of the targeted StatsD server
-    * @throws StatsdClientException
-    * if the client could not be started
-    */
-  def this(prefix: String, hostname: String, port: Int) {
-    this(prefix, hostname, port, Integer.MAX_VALUE)
-  }
-
-  /**
-    * Create a new StatsD client communicating with a StatsD instance on the
-    * specified host and port. All messages send via this client will have
-    * their keys prefixed with the specified string. The new client will
-    * attempt to open a connection to the StatsD server immediately upon
-    * instantiation, and may throw an exception if that a connection cannot
-    * be established. Once a client has been instantiated in this way, all
-    * exceptions thrown during subsequent usage are passed to the specified
-    * handler and then consumed, guaranteeing that failures in metrics will
-    * not affect normal code execution.
-    *
-    * @param prefix
-    * the prefix to apply to keys sent via this client
-    * @param hostname
-    * the host name of the targeted StatsD server
-    * @param port
-    * the port of the targeted StatsD server
-    * @param constantTags
-    * tags to be added to all content sent
-    * @param queueSize
-    * the maximum amount of unprocessed messages in the BlockingQueue.
-    * @throws StatsdClientException
-    * if the client could not be started
-    */
-  def this(prefix: String, hostname: String, port: Int, queueSize: Int, constantTags: Array[String]) {
-    this(prefix, queueSize, constantTags, Inet.staticStatsdAddressResolution(hostname, port))
-  }
-
-  /**
-    * Create a new StatsD client communicating with a StatsD instance on the
-    * specified host and port. All messages send via this client will have
-    * their keys prefixed with the specified string. The new client will
-    * attempt to open a connection to the StatsD server immediately upon
-    * instantiation, and may throw an exception if that a connection cannot
-    * be established. Once a client has been instantiated in this way, all
-    * exceptions thrown during subsequent usage are consumed, guaranteeing
-    * that failures in metrics will not affect normal code execution.
-    *
-    * @param prefix
-    * the prefix to apply to keys sent via this client
-    * @param hostname
-    * the host name of the targeted StatsD server
-    * @param port
-    * the port of the targeted StatsD server
-    * @param constantTags
-    * tags to be added to all content sent
-    * @throws StatsdClientException
-    * if the client could not be started
-    */
-  def this(prefix: String, hostname: String, port: Int, constantTags: String*) {
-    this(
-      prefix,
-      Integer.MAX_VALUE,
-      constantTags.toArray,
-      Inet.staticStatsdAddressResolution(hostname, port))
-  }
-
-  /**
-    * Create a new StatsD client communicating with a StatsD instance on the
-    * specified host and port. All messages send via this client will have
-    * their keys prefixed with the specified string. The new client will
-    * attempt to open a connection to the StatsD server immediately upon
-    * instantiation, and may throw an exception if that a connection cannot
-    * be established. Once a client has been instantiated in this way, all
-    * exceptions thrown during subsequent usage are consumed, guaranteeing
-    * that failures in metrics will not affect normal code execution.
-    *
-    * @param prefix
-    * the prefix to apply to keys sent via this client
-    * @param hostname
-    * the host name of the targeted StatsD server
-    * @param port
-    * the port of the targeted StatsD server
-    * @param constantTags
-    * tags to be added to all content sent
-    * @param queueSize
-    * the maximum amount of unprocessed messages in the BlockingQueue.
-    * @throws StatsdClientException
-    * if the client could not be started
-    */
-  def this(prefix: String, hostname: String, port: Int, queueSize: Int, constantTags: String*) {
-    this(
-      prefix,
-      Integer.MAX_VALUE,
-      constantTags.toArray,
-      Inet.staticStatsdAddressResolution(hostname, port))
-  }
-
-  /**
-    * Create a new StatsD client communicating with a StatsD instance on the
-    * specified host and port. All messages send via this client will have
-    * their keys prefixed with the specified string. The new client will
-    * attempt to open a connection to the StatsD server immediately upon
-    * instantiation, and may throw an exception if that a connection cannot
-    * be established. Once a client has been instantiated in this way, all
-    * exceptions thrown during subsequent usage are passed to the specified
-    * handler and then consumed, guaranteeing that failures in metrics will
-    * not affect normal code execution.
-    *
-    * @param prefix
-    * the prefix to apply to keys sent via this client
-    * @param hostname
-    * the host name of the targeted StatsD server
-    * @param port
-    * the port of the targeted StatsD server
-    * @param constantTags
-    * tags to be added to all content sent
-    * @throws StatsdClientException
-    * if the client could not be started
-    */
-  def this(prefix: String, hostname: String, port: Int, constantTags: Array[String]) {
-    this(prefix, Integer.MAX_VALUE, constantTags, Inet.staticStatsdAddressResolution(hostname, port))
+      constantTags.toArray)
   }
 
   /**
@@ -224,4 +98,6 @@ final class NonBlockingStatsdClient(
   }
 
   override def sampledAt(sampleRate: SampleRate): StatsdClient = new SamplingStatsdClient(this, sampleRate)
+
+  override def messages: Source[ByteBuffer] = client.messages
 }

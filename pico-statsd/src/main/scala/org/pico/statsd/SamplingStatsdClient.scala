@@ -1,5 +1,8 @@
 package org.pico.statsd
 
+import java.nio.ByteBuffer
+
+import org.pico.event.Source
 import org.pico.statsd.datapoint.Sampler
 import org.pico.statsd.impl.Printable
 
@@ -21,4 +24,6 @@ class SamplingStatsdClient(impl: StatsdClient, override val sampleRate: SampleRa
   }
 
   override def sampledAt(sampleRate: SampleRate): StatsdClient = new SamplingStatsdClient(impl, sampleRate)
+
+  override def messages: Source[ByteBuffer] = impl.messages
 }

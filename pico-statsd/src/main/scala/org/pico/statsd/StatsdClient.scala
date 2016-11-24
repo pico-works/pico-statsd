@@ -1,7 +1,9 @@
 package org.pico.statsd
 
 import java.io.Closeable
+import java.nio.ByteBuffer
 
+import org.pico.event.Source
 import org.pico.statsd.datapoint.Sampler
 import org.pico.statsd.impl.Printable
 
@@ -12,6 +14,8 @@ import org.pico.statsd.impl.Printable
   * @author Tom Denley
   */
 trait StatsdClient extends Closeable {
+  def messages: Source[ByteBuffer]
+
   def sampleRate: SampleRate
 
   def send[D: Printable](aspect: String, sampleRate: SampleRate, d: D, tags: Seq[String]): Unit
