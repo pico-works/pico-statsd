@@ -1,11 +1,8 @@
 package org.pico.statsd
 
 import java.io.{ByteArrayOutputStream, PrintWriter}
-import java.lang.{StringBuilder => JStringBuilder}
 import java.net.InetSocketAddress
-import java.util.concurrent.Callable
 
-import com.timgroup.statsd._
 import org.pico.statsd.datapoint.{DataPointWritable, Sampler}
 
 /**
@@ -28,7 +25,7 @@ import org.pico.statsd.datapoint.{DataPointWritable, Sampler}
   * yields the IP address and socket of the StatsD server
   * @param queueSize
   * the maximum amount of unprocessed messages in the BlockingQueue.
-  * @throws StatsDClientException
+  * @throws StatsdClientException
   * if the client could not be started
   */
 final class NonBlockingStatsdClient(

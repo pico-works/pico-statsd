@@ -1,9 +1,6 @@
 package org.pico.statsd
 
-import java.net.{InetAddress, InetSocketAddress, UnknownHostException}
-import java.util.concurrent.Callable
-
-import com.timgroup.statsd.StatsDClientException
+import java.net.{InetAddress, InetSocketAddress}
 
 object Inet {
   /**
@@ -31,12 +28,11 @@ object Inet {
     () => address
   }
 
-  @throws[StatsDClientException]
   def staticStatsDAddressResolution(hostname: String, port: Int): () => InetSocketAddress = {
     try {
       staticAddressResolution(hostname, port)
     } catch {
-      case e: Exception => throw new StatsDClientException("Failed to lookup StatsD host", e)
+      case e: Exception => throw new StatsdClientException("Failed to lookup StatsD host", e)
     }
   }
 }

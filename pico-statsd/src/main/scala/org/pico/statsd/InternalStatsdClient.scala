@@ -1,6 +1,5 @@
 package org.pico.statsd
 
-import com.timgroup.statsd.StatsDClientException
 import java.io.{Closeable, IOException}
 import java.net.InetSocketAddress
 import java.nio.ByteBuffer
@@ -23,7 +22,7 @@ import org.pico.event.{Bus, Source}
   *
   * @param addressLookup yields the IP address and socket of the StatsD server
   * @param queueSize     the maximum amount of unprocessed messages in the BlockingQueue.
-  * @throws StatsDClientException if the client could not be started
+  * @throws StatsdClientException if the client could not be started
   */
 final class InternalStatsdClient(
     val queueSize: Int,
@@ -34,7 +33,7 @@ final class InternalStatsdClient(
   private val clientChannel = try {
     DatagramChannel.open
   } catch {
-    case e: Exception => throw new StatsDClientException("Failed to start StatsD client", e)
+    case e: Exception => throw StatsdClientException("Failed to start StatsD client", e)
   }
 
   private val queue: BlockingQueue[ByteArrayWindow] = new LinkedBlockingQueue[ByteArrayWindow](queueSize)
@@ -65,7 +64,7 @@ final class InternalStatsdClient(
     * @param hostname     the host name of the targeted StatsD server
     * @param port         the port of the targeted StatsD server
     * @param queueSize    the maximum amount of unprocessed messages in the BlockingQueue.
-    * @throws StatsDClientException if the client could not be started
+    * @throws StatsdClientException if the client could not be started
     */
   def this(hostname: String, port: Int, queueSize: Int) {
     this(queueSize, Inet.staticStatsDAddressResolution(hostname, port))
