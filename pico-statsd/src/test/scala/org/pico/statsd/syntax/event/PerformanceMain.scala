@@ -25,6 +25,8 @@ object PerformanceMain {
       val after = Deadline.now
 
       println(after - before)
+
+      Thread.sleep(1000)
     }
   }
 }

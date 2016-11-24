@@ -210,22 +210,13 @@ final class NonBlockingStatsdClient(
     */
   override def close(): Unit = client.close()
 
-  val baos = new ByteArrayOutputStream(1000)
-  val out = new PrintWriter(baos)
-
   override def send[D: Printable](aspect: String, sampleRate: SampleRate, d: D, tags: Seq[String]): Unit = {
-    out.flush()
-    baos.reset()
-
-    // TODO: Write more tags
-    Printable.of[D].write(out, prefix, aspect, sampleRate, d) { tagWriter =>
-      constantTags.foreach(tagWriter.writeTag)
-      tags.foreach(tagWriter.writeTag)
+    client.send { out =>
+      Printable.of[D].write(out, prefix, aspect, sampleRate, d) { tagWriter =>
+        constantTags.foreach(tagWriter.writeTag)
+        tags.foreach(tagWriter.writeTag)
+      }
     }
-
-    out.flush()
-
-    client.send(ByteArrayWindow(baos.toByteArray, 0, baos.size()))
   }
 
   override def sample[S: Sampler](s: S): Unit = {

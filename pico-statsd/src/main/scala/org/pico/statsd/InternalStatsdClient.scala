@@ -1,6 +1,6 @@
 package org.pico.statsd
 
-import java.io.{Closeable, IOException}
+import java.io.{ByteArrayOutputStream, Closeable, IOException, PrintWriter}
 import java.net.InetSocketAddress
 import java.nio.ByteBuffer
 import java.nio.channels.DatagramChannel
@@ -9,7 +9,7 @@ import java.util.concurrent._
 
 import org.pico.event.{Bus, Source}
 import org.pico.logging.Logger
-import org.pico.statsd.impl.{ByteArrayWindow, Inet}
+import org.pico.statsd.impl.{AccessibleByteArrayOutputStream, ByteArrayWindow, Inet}
 
 import scala.util.control.NonFatal
 
@@ -44,7 +44,7 @@ final class InternalStatsdClient(
     case e: Exception => throw StatsdClientException("Failed to start StatsD client", e)
   }
 
-  private val queue: BlockingQueue[ByteArrayWindow] = new LinkedBlockingQueue[ByteArrayWindow](queueSize)
+  private val queue: BlockingQueue[PrintWriter => Unit] = new LinkedBlockingQueue[PrintWriter => Unit](queueSize)
 
   private val executor: ExecutorService = Executors.newSingleThreadExecutor(new ThreadFactory {
     final private[statsd] val delegate: ThreadFactory = Executors.defaultThreadFactory
@@ -101,36 +101,45 @@ final class InternalStatsdClient(
     }
   }
 
-  def send(message: ByteArrayWindow) {
-    queue.offer(message)
+  def send(f: PrintWriter => Unit) {
+    queue.offer(f)
   }
 
   private class QueueConsumer private[statsd](val addressLookup: () => InetSocketAddress) extends Runnable {
-    final private val sendBuffer: ByteBuffer = ByteBuffer.allocate(InternalStatsdClient.PACKET_SIZE_BYTES)
-
     def run() {
       log.info("Statsd push thread started")
+
+      val baos = new AccessibleByteArrayOutputStream(InternalStatsdClient.PACKET_SIZE_BYTES * 2)
+      val out = new PrintWriter(baos, true)
 
       try {
         while (!executor.isShutdown) {
           try {
-            val message: ByteArrayWindow = queue.poll(1, TimeUnit.SECONDS)
+            val printTo = queue.poll(1, TimeUnit.SECONDS)
 
-            if (null != message) {
+            if (null != printTo) {
               val address: InetSocketAddress = addressLookup()
 
-              if (sendBuffer.remaining < (message.length + 1)) {
-                blockingSend(address)
+              val lastOffset = baos.size()
+
+              if (lastOffset > 0) {
+                out.print('\n')
+                out.flush()
               }
 
-              if (sendBuffer.position > 0) {
-                sendBuffer.put('\n'.toByte)
-              }
+              val lineOffset = baos.size()
 
-              sendBuffer.put(message.array, message.start, message.length)
+              printTo(out)
+              out.flush()
 
-              if (null == queue.peek) {
-                blockingSend(address)
+              val nextOffset = baos.size
+
+              if (nextOffset > InternalStatsdClient.PACKET_SIZE_BYTES) {
+                blockingSend(address, baos.byteArray, 0, lastOffset)
+                baos.drop(lineOffset)
+              } else if (queue.peek == null) {
+                blockingSend(address, baos.byteArray, 0, nextOffset)
+                baos.drop(nextOffset)
               }
             }
           } catch {
@@ -145,16 +154,12 @@ final class InternalStatsdClient(
     }
 
     @throws[IOException]
-    private def blockingSend(address: InetSocketAddress) {
-      val sizeOfBuffer: Int = sendBuffer.position
-      sendBuffer.flip
-      val sentBytes: Int = clientChannel.send(sendBuffer, address)
-      sendBuffer.limit(sendBuffer.capacity)
-      sendBuffer.rewind
+    private def blockingSend(address: InetSocketAddress, buffer: Array[Byte], start: Int, length: Int) {
+      val sentBytes = clientChannel.send(ByteBuffer.wrap(buffer, start, length), address)
 
-      if (sizeOfBuffer != sentBytes) {
+      if (length != sentBytes) {
         _errors.publish(new IOException(
-          s"Could not send entirely stat $sendBuffer to host ${address.getHostName}:${address.getPort}. Only sent $sentBytes bytes out of $sizeOfBuffer bytes"))
+          s"Could not send entirely stat '${new String(buffer, start, length)}' to host ${address.getHostName}:${address.getPort}. Only sent $sentBytes bytes out of $length bytes"))
       }
     }
   }
