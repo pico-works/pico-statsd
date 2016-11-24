@@ -2,7 +2,7 @@ package org.pico.statsd.datapoint
 
 import java.io.PrintWriter
 
-import org.pico.statsd.StatsdNumberFormat
+import org.pico.statsd.impl.StatsdNumberFormat
 
 trait DataPoint[A] {
   def writeSampleRate(out: PrintWriter, a: A): Unit
