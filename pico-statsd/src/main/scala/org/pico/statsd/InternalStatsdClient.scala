@@ -1,6 +1,5 @@
 package org.pico.statsd
 
-import com.timgroup.statsd.StatsDClientErrorHandler
 import com.timgroup.statsd.StatsDClientException
 import java.io.{Closeable, IOException}
 import java.net.InetSocketAddress
@@ -8,6 +7,8 @@ import java.nio.ByteBuffer
 import java.nio.channels.DatagramChannel
 import java.nio.charset.Charset
 import java.util.concurrent._
+
+import org.pico.event.{Bus, Source}
 
 /**
   * Create a new StatsD client communicating with a StatsD instance on the
@@ -20,20 +21,15 @@ import java.util.concurrent._
   * handler and then consumed, guaranteeing that failures in metrics will
   * not affect normal code execution.
   *
-  * @param errorHandler  handler to use when an exception occurs during usage, may be null to indicate noop
   * @param addressLookup yields the IP address and socket of the StatsD server
   * @param queueSize     the maximum amount of unprocessed messages in the BlockingQueue.
   * @throws StatsDClientException if the client could not be started
   */
 final class InternalStatsdClient(
     val queueSize: Int,
-    var errorHandler: StatsDClientErrorHandler,
     val addressLookup: () => InetSocketAddress) extends Closeable {
-  val handler: StatsDClientErrorHandler = if (errorHandler == null) {
-    InternalStatsdClient.NO_OP_HANDLER
-  } else {
-    errorHandler
-  }
+  private val _errors = Bus[Exception]
+  val errors: Source[Exception] = _errors
 
   private val clientChannel = try {
     DatagramChannel.open
@@ -68,12 +64,11 @@ final class InternalStatsdClient(
     *
     * @param hostname     the host name of the targeted StatsD server
     * @param port         the port of the targeted StatsD server
-    * @param errorHandler handler to use when an exception occurs during usage, may be null to indicate noop
     * @param queueSize    the maximum amount of unprocessed messages in the BlockingQueue.
     * @throws StatsDClientException if the client could not be started
     */
-  def this(hostname: String, port: Int, queueSize: Int, errorHandler: StatsDClientErrorHandler) {
-    this(queueSize, errorHandler, Inet.staticStatsDAddressResolution(hostname, port))
+  def this(hostname: String, port: Int, queueSize: Int) {
+    this(queueSize, Inet.staticStatsDAddressResolution(hostname, port))
   }
 
   /**
@@ -85,13 +80,13 @@ final class InternalStatsdClient(
       executor.shutdown()
       executor.awaitTermination(30, TimeUnit.SECONDS)
     } catch {
-      case e: Exception => handler.handle(e)
+      case e: Exception => _errors.publish(e)
     } finally {
       if (clientChannel != null) {
         try {
           clientChannel.close()
         } catch {
-          case e: IOException => handler.handle(e)
+          case e: IOException => _errors.publish(e)
         }
       }
     }
@@ -115,7 +110,7 @@ final class InternalStatsdClient(
           if (null == queue.peek) blockingSend(address)
         }
       } catch {
-        case e: Exception => handler.handle(e)
+        case e: Exception => _errors.publish(e)
       }
     }
 
@@ -127,7 +122,7 @@ final class InternalStatsdClient(
       sendBuffer.limit(sendBuffer.capacity)
       sendBuffer.rewind
       if (sizeOfBuffer != sentBytes) {
-        handler.handle(new IOException(
+        _errors.publish(new IOException(
           s"Could not send entirely stat $sendBuffer to host ${address.getHostName}:${address.getPort}. Only sent $sentBytes bytes out of $sizeOfBuffer bytes"))
       }
     }
@@ -137,10 +132,5 @@ final class InternalStatsdClient(
 
 object InternalStatsdClient {
   private val PACKET_SIZE_BYTES: Int = 1400
-  private val NO_OP_HANDLER: StatsDClientErrorHandler = new StatsDClientErrorHandler() {
-    def handle(e: Exception) {
-      /* No-op */
-    }
-  }
   val MESSAGE_CHARSET: Charset = Charset.forName("UTF-8")
 }
