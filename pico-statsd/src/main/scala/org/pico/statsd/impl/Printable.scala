@@ -1,19 +1,19 @@
-package org.pico.statsd.datapoint
+package org.pico.statsd.impl
 
 import java.io.PrintWriter
 
 import org.pico.statsd.SampleRate
-import org.pico.statsd.impl.TagWriter
+import org.pico.statsd.datapoint.DataPoint
 
-trait DataPointWritable[A] {
+trait Printable[A] {
   def write(out: PrintWriter, prefix: String, aspect: String, sampleRate: SampleRate, a: A)(writeExtraTags: TagWriter => Unit): Unit
 }
 
-object DataPointWritable {
-  def of[D: DataPointWritable]: DataPointWritable[D] = implicitly[DataPointWritable[D]]
+object Printable {
+  def of[D: Printable]: Printable[D] = implicitly[Printable[D]]
 
-  implicit def singletonDataPoints[D: DataPoint]: DataPointWritable[D] = {
-    new DataPointWritable[D] {
+  implicit def singletonDataPoints[D: DataPoint]: Printable[D] = {
+    new Printable[D] {
       override def write(out: PrintWriter, prefix: String, aspect: String, sampleRate: SampleRate, a: D)(writeExtraTags: TagWriter => Unit): Unit = {
         out.print(prefix)
 

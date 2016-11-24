@@ -3,8 +3,8 @@ package org.pico.statsd
 import java.io.{ByteArrayOutputStream, PrintWriter}
 import java.net.InetSocketAddress
 
-import org.pico.statsd.datapoint.{DataPointWritable, Sampler}
-import org.pico.statsd.impl.ByteArrayWindow
+import org.pico.statsd.datapoint.Sampler
+import org.pico.statsd.impl.{ByteArrayWindow, Printable}
 
 /**
   * Create a new StatsD client communicating with a StatsD instance on the
@@ -213,12 +213,12 @@ final class NonBlockingStatsdClient(
   val baos = new ByteArrayOutputStream(1000)
   val out = new PrintWriter(baos)
 
-  override def send[D: DataPointWritable](aspect: String, sampleRate: SampleRate, d: D, tags: Seq[String]): Unit = {
+  override def send[D: Printable](aspect: String, sampleRate: SampleRate, d: D, tags: Seq[String]): Unit = {
     out.flush()
     baos.reset()
 
     // TODO: Write more tags
-    DataPointWritable.of[D].write(out, prefix, aspect, sampleRate, d) { tagWriter =>
+    Printable.of[D].write(out, prefix, aspect, sampleRate, d) { tagWriter =>
       constantTags.foreach(tagWriter.writeTag)
       tags.foreach(tagWriter.writeTag)
     }
