@@ -26,7 +26,7 @@ object MetricPerformanceMain {
     val record = Record(Topic("topic"), 1L, 1000L)
 
     for {
-      statsd      <- Auto(new NonBlockingStatsdClient("attackstream-dedup"))
+      statsd      <- Auto(new NonBlockingStatsdClient("attackstream-dedup", 1000000, Array("club_name:moo")))
       udpEmitter  <- Auto(UdpEmitter(Inet.staticStatsdAddressResolution("localhost", 8125)))
       _           <- Auto(statsd.messages into udpEmitter)
       _           <- Auto(statsd.messages.subscribe(b => println(new String(b.array(), 0, b.limit()))))
@@ -35,7 +35,7 @@ object MetricPerformanceMain {
 
       val bus = Bus[Record]
 
-      bus.withMetrics("consumer.record.count", SampleRate.always)//(0.001))
+      bus.withMetrics("consumer", SampleRate(0.001))
 
       val before = Deadline.now
 

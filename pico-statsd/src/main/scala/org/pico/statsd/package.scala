@@ -13,8 +13,9 @@ package object statsd {
     Sink[A](a => f(c, a))
   }
   
-  def metricsSink[A: Sampler](metric: String, sampleRate: SampleRate, tags: String*)(implicit c: StatsdClient): Sink[A] = {
-    Sink[A](c.sample[A])
+  def metricsSink[A: Sampler](aspect: String, sampleRate: SampleRate, tags: String*)(implicit c: StatsdClient): Sink[A] = {
+    val configuredClient = c.withAspect(aspect)
+    Sink[A](configuredClient.sample[A])
   }
   
   def counterSink[A](metric: String, sampleRate: SampleRate, delta: Long, tags: String*)(implicit c: StatsdClient): Sink[A] = {
@@ -23,7 +24,7 @@ package object statsd {
   }
   
   def counterSink[A](metric: String, sampleRate: SampleRate, tags: String*)(implicit c: StatsdClient): Sink[A] = {
-    val condfiguredClient = c.sampledAt(sampleRate)
-    Sink[A](a => condfiguredClient.send(metric, Increment(), tags))
+    val configuredClient = c.sampledAt(sampleRate)
+    Sink[A](a => configuredClient.send(metric, Increment(), tags))
   }
 }
