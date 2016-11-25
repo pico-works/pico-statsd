@@ -13,7 +13,9 @@ package object event {
   implicit class SinkSourceOps_Metric_Rht98nT[A, B](val self: SinkSource[A, B]) extends AnyVal {
     def withMetrics(aspect: String, sampleRate: SampleRate, tags: String*)(implicit c: StatsdClient, m: Sampler[B]): SinkSource[A, B] = {
       val configuredClient = c.sampledAt(sampleRate).withAspect(aspect)
-      self += self.effect(a => configuredClient.sample[B](a))
+      self += self.effect { a =>
+        configuredClient.sample[B](a)
+      }
       self
     }
   }
@@ -21,7 +23,9 @@ package object event {
   implicit class SourceOps_Metric_Rht98nT[A](val self: Source[A]) extends AnyVal {
     def withMetrics(aspect: String, sampleRate: SampleRate, tags: String*)(implicit c: StatsdClient, m: Sampler[A]): Source[A] = {
       val configuredClient = c.sampledAt(sampleRate).withAspect(aspect)
-      self += self.effect(a => configuredClient.sampledAt(sampleRate).sample[A](a))
+      self += self.effect { a =>
+        configuredClient.sampledAt(sampleRate).sample[A](a)
+      }
       self
     }
   }
