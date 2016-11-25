@@ -24,7 +24,7 @@ package object event {
     def withMetrics(aspect: String, sampleRate: SampleRate, tags: String*)(implicit c: StatsdClient, m: Sampler[A]): Source[A] = {
       val configuredClient = c.sampledAt(sampleRate).withAspect(aspect)
       self += self.effect { a =>
-        configuredClient.sampledAt(sampleRate).sample[A](a)
+        configuredClient.sample[A](a)
       }
       self
     }
