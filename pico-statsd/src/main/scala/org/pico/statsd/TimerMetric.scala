@@ -11,7 +11,7 @@ import scala.concurrent.duration.FiniteDuration
 sealed trait TimerMetric[A] {
   def tags(value: A): List[String]
 
-  def send(client: StatsdClient, aspect: String, value: A, duration: FiniteDuration, sampleRate: SampleRate, extraTags: List[String]): Unit
+  def send(client: StatsdClient, metric: String, value: A, duration: FiniteDuration, sampleRate: SampleRate, extraTags: List[String]): Unit
 }
 
 object TimerMetric {
@@ -25,11 +25,11 @@ object TimerMetric {
 
     def send(
         client: StatsdClient,
-        aspect: String,
+        metric: String,
         value: A,
         duration: FiniteDuration,
         sampleRate: SampleRate, t: List[String]): Unit = {
-      client.sampledAt(sampleRate).send(aspect, Time(duration.toMillis), t ++ tags(value))
+      client.sampledAt(sampleRate).send(metric, Time(duration.toMillis), t ++ tags(value))
     }
   }
 }
