@@ -51,101 +51,101 @@ object Sampler {
   }
 }
 
-case class SumSampler[A](aspect: String) extends Sampler[Long] {
+case class SumSampler[A](metric: String) extends Sampler[Long] {
   override def constantTags: List[String] = List.empty
 
   override def deriveTags(a: Long, tags: List[String]): List[String] = tags
 
   override def sendIn(client: StatsdClient, a: Long, tags: List[String]): Unit = {
-    client.send(aspect, Count(a), tags)
+    client.send(metric, Count(a), tags)
   }
 }
 
-case class CountSampler[A](aspect: String) extends Sampler[A] {
+case class CountSampler[A](metric: String) extends Sampler[A] {
   override def constantTags: List[String] = List.empty
 
   override def deriveTags(a: A, tags: List[String]): List[String] = tags
 
   override def sendIn(client: StatsdClient, a: A, tags: List[String]): Unit = {
-    client.send(aspect, Increment(), tags)
+    client.send(metric, Increment(), tags)
   }
 }
 
-case class IncrementSampler[A](aspect: String) extends Sampler[A] {
+case class IncrementSampler[A](metric: String) extends Sampler[A] {
   override def constantTags: List[String] = List.empty
 
   override def deriveTags(a: A, tags: List[String]): List[String] = tags
 
   override def sendIn(client: StatsdClient, a: A, tags: List[String]): Unit = {
-    client.send(aspect, Increment(), tags)
+    client.send(metric, Increment(), tags)
   }
 }
 
-case class DecrementSampler[A](aspect: String) extends Sampler[A] {
+case class DecrementSampler[A](metric: String) extends Sampler[A] {
   override def constantTags: List[String] = List.empty
 
   override def deriveTags(a: A, tags: List[String]): List[String] = tags
 
   override def sendIn(client: StatsdClient, a: A, tags: List[String]): Unit = {
-    client.send(aspect, Decrement(), tags)
+    client.send(metric, Decrement(), tags)
   }
 }
 
-case class IntegralGaugeSampler(aspect: String) extends Sampler[Long] {
+case class IntegralGaugeSampler(metric: String) extends Sampler[Long] {
   override def constantTags: List[String] = List.empty
 
   override def sendIn(client: StatsdClient, a: Long, tags: List[String]): Unit = {
-    client.send(aspect, LongGauge(a), tags)
+    client.send(metric, LongGauge(a), tags)
   }
 
   override def deriveTags(a: Long, tags: List[String]): List[String] = tags
 }
 
-case class FractionalGaugeSampler(aspect: String) extends Sampler[Double] {
+case class FractionalGaugeSampler(metric: String) extends Sampler[Double] {
   override def constantTags: List[String] = List.empty
 
   override def sendIn(client: StatsdClient, a: Double, tags: List[String]): Unit = {
-    client.send(aspect, DoubleGauge(a), tags)
+    client.send(metric, DoubleGauge(a), tags)
   }
 
   override def deriveTags(a: Double, tags: List[String]): List[String] = tags
 }
 
-case class IntegralHistogramSampler(aspect: String) extends Sampler[Long] {
+case class IntegralHistogramSampler(metric: String) extends Sampler[Long] {
   override def constantTags: List[String] = List.empty
 
   override def sendIn(client: StatsdClient, a: Long, tags: List[String]): Unit = {
-    client.send(aspect, LongHistogram(a), tags)
+    client.send(metric, LongHistogram(a), tags)
   }
 
   override def deriveTags(a: Long, tags: List[String]): List[String] = tags
 }
 
-case class FractionalHistogramSampler(aspect: String) extends Sampler[Double] {
+case class FractionalHistogramSampler(metric: String) extends Sampler[Double] {
   override def constantTags: List[String] = List.empty
 
   override def sendIn(client: StatsdClient, a: Double, tags: List[String]): Unit = {
-    client.send(aspect, DoubleHistogram(a), tags)
+    client.send(metric, DoubleHistogram(a), tags)
   }
 
   override def deriveTags(a: Double, tags: List[String]): List[String] = tags
 }
 
-case class CounterSampler(aspect: String) extends Sampler[Long] {
+case class CounterSampler(metric: String) extends Sampler[Long] {
   override def constantTags: List[String] = List.empty
 
   override def sendIn(client: StatsdClient, a: Long, tags: List[String]): Unit = {
-    client.send(aspect, DoubleHistogram(a), tags)
+    client.send(metric, DoubleHistogram(a), tags)
   }
 
   override def deriveTags(a: Long, tags: List[String]): List[String] = tags
 }
 
-case class TimerSampler(aspect: String) extends Sampler[Long] {
+case class TimerSampler(metric: String) extends Sampler[Long] {
   override def constantTags: List[String] = List.empty
 
   override def sendIn(client: StatsdClient, a: Long, tags: List[String]): Unit = {
-    client.send(aspect, Time(a), tags)
+    client.send(metric, Time(a), tags)
   }
 
   override def deriveTags(a: Long, tags: List[String]): List[String] = tags
