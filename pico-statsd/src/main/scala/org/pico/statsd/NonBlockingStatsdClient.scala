@@ -86,7 +86,7 @@ final class NonBlockingStatsdClient(
 
   override def send[D: Printable](metric: String, sampleRate: SampleRate, d: D, tags: Seq[String]): Unit = {
     client.send { out =>
-      Printable.of[D].write(out, prefix, metric, sampleRate, d) { tagWriter =>
+      Printable.of[D].write(out, Array(prefix, aspect).mkString("."), metric, sampleRate, d) { tagWriter =>
         constantTags.foreach(tagWriter.writeTag)
         tags.foreach(tagWriter.writeTag)
       }
@@ -97,7 +97,15 @@ final class NonBlockingStatsdClient(
     Sampler.of[S].sendIn(this, s)
   }
 
-  override def sampledAt(sampleRate: SampleRate): StatsdClient = new SamplingStatsdClient(this, sampleRate)
+  override def sampledAt(sampleRate: SampleRate): StatsdClient = {
+    new ConfiguredStatsdClient(this, aspect, sampleRate)
+  }
+
+  override def withAspect(aspect: String): StatsdClient = {
+    new ConfiguredStatsdClient(this, aspect, sampleRate)
+  }
 
   override def messages: Source[ByteBuffer] = client.messages
+
+  override def aspect: String = ""
 }

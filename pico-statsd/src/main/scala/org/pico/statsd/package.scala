@@ -18,10 +18,12 @@ package object statsd {
   }
   
   def counterSink[A](metric: String, sampleRate: SampleRate, delta: Long, tags: String*)(implicit c: StatsdClient): Sink[A] = {
-    Sink[A](a => c.sampledAt(sampleRate).send(metric, Count(delta), tags))
+    val configuredClient = c.sampledAt(sampleRate)
+    Sink[A](a => configuredClient.send(metric, Count(delta), tags))
   }
   
   def counterSink[A](metric: String, sampleRate: SampleRate, tags: String*)(implicit c: StatsdClient): Sink[A] = {
-    Sink[A](a => c.sampledAt(sampleRate).send(metric, Increment(), tags))
+    val condfiguredClient = c.sampledAt(sampleRate)
+    Sink[A](a => condfiguredClient.send(metric, Increment(), tags))
   }
 }

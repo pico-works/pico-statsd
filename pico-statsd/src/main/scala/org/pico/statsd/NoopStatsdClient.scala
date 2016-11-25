@@ -22,4 +22,8 @@ object NoopStatsdClient extends StatsdClient {
   override def sampledAt(sampleRate: SampleRate): StatsdClient = this
 
   override def messages: Source[ByteBuffer] = ClosedSource
+
+  override def aspect: String = ""
+
+  override def withAspect(aspect: String): StatsdClient = this
 }

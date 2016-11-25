@@ -14,6 +14,8 @@ import org.pico.statsd.impl.Printable
   * @author Tom Denley
   */
 trait StatsdClient extends Closeable {
+  def aspect: String
+
   def messages: Source[ByteBuffer]
 
   def sampleRate: SampleRate
@@ -27,6 +29,8 @@ trait StatsdClient extends Closeable {
   def sample[S: Sampler](s: S): Unit
 
   def sampledAt(sampleRate: SampleRate): StatsdClient
+
+  def withAspect(aspect: String): StatsdClient
 
   protected def validSample(sampleRate: SampleRate): Boolean = {
     !(sampleRate.value != 1 && Math.random > sampleRate.value)
