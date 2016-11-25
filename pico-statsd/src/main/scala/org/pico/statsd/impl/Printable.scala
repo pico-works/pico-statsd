@@ -6,7 +6,7 @@ import org.pico.statsd.SampleRate
 import org.pico.statsd.datapoint.DataPoint
 
 trait Printable[A] {
-  def write(out: PrintWriter, prefix: String, aspect: String, sampleRate: SampleRate, a: A)(writeExtraTags: TagWriter => Unit): Unit
+  def write(out: PrintWriter, prefix: String, metric: String, sampleRate: SampleRate, a: A)(writeExtraTags: TagWriter => Unit): Unit
 }
 
 object Printable {
@@ -14,14 +14,14 @@ object Printable {
 
   implicit def singletonDataPoints[D: DataPoint]: Printable[D] = {
     new Printable[D] {
-      override def write(out: PrintWriter, prefix: String, aspect: String, sampleRate: SampleRate, a: D)(writeExtraTags: TagWriter => Unit): Unit = {
+      override def write(out: PrintWriter, prefix: String, metric: String, sampleRate: SampleRate, a: D)(writeExtraTags: TagWriter => Unit): Unit = {
         out.print(prefix)
 
-        if (prefix.nonEmpty && aspect.nonEmpty) {
+        if (prefix.nonEmpty && metric.nonEmpty) {
           out.print(".")
         }
 
-        out.print(aspect)
+        out.print(metric)
         out.print(":")
         DataPoint.of[D].writeValue(out, a)
         out.print("|")

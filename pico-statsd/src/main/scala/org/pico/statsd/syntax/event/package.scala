@@ -11,7 +11,7 @@ package object event {
   
   //-------------------- METRIC --------------------------------------------
   implicit class SinkSourceOps_Metric_Rht98nT[A, B](val self: SinkSource[A, B]) extends AnyVal {
-    def withMetrics(aspect: String, sampleRate: SampleRate, tags: String*)(implicit c: StatsdClient, m: Sampler[B]): SinkSource[A, B] = {
+    def withMetrics(metric: String, sampleRate: SampleRate, tags: String*)(implicit c: StatsdClient, m: Sampler[B]): SinkSource[A, B] = {
       val samplingClient = c.sampledAt(sampleRate)
       self += self.effect(a => samplingClient.sample[B](a))
       self
@@ -19,7 +19,7 @@ package object event {
   }
   
   implicit class SourceOps_Metric_Rht98nT[A](val self: Source[A]) extends AnyVal {
-    def withMetrics(aspect: String, sampleRate: SampleRate, tags: String*)(implicit c: StatsdClient, m: Sampler[A]): Source[A] = {
+    def withMetrics(metric: String, sampleRate: SampleRate, tags: String*)(implicit c: StatsdClient, m: Sampler[A]): Source[A] = {
       val samplingClient = c.sampledAt(sampleRate)
       self += self.effect(a => samplingClient.sampledAt(sampleRate).sample[A](a))
       self
@@ -48,7 +48,7 @@ package object event {
   implicit class SinkSourceOps_Timer_Rht98nT[A, B](val self: SinkSource[A, B]) extends AnyVal {
     
     @inline
-    def withSimpleTimer(aspect: String, sampleRate: SampleRate, tags: String*)(implicit c: StatsdClient): SinkSource[A, B] = {
+    def withSimpleTimer(metric: String, sampleRate: SampleRate, tags: String*)(implicit c: StatsdClient): SinkSource[A, B] = {
       val samplingClient = c.sampledAt(sampleRate)
       val tagsArray = tags.toArray
       val bus = Bus[B]
@@ -57,7 +57,7 @@ package object event {
         try {
           bus.publish(a)
         } finally {
-          samplingClient.send(aspect, Time((Deadline.now - start).toMillis), tagsArray)
+          samplingClient.send(metric, Time((Deadline.now - start).toMillis), tagsArray)
         }
       }
       
@@ -65,7 +65,7 @@ package object event {
     }
     
     @inline
-    def withTimer(aspect: String, sampleRate: SampleRate, tags: String*)(implicit c: StatsdClient, m: TimerMetric[B]): SinkSource[A, B] = {
+    def withTimer(metric: String, sampleRate: SampleRate, tags: String*)(implicit c: StatsdClient, m: TimerMetric[B]): SinkSource[A, B] = {
       val bus = Bus[B]
       bus += self.subscribe { a =>
         val start = Deadline.now
@@ -73,7 +73,7 @@ package object event {
           bus.publish(a)
         } finally {
           // TODO Is it intended to use send?
-          m.send(c, aspect, a, Deadline.now - start, sampleRate, tags.toList)
+          m.send(c, metric, a, Deadline.now - start, sampleRate, tags.toList)
         }
       }
   
@@ -85,7 +85,7 @@ package object event {
   implicit class SourceOps_Timer_Rht98nT[A](val self: Source[A]) extends AnyVal {
     
     @inline
-    def withSimpleTimer(aspect: String, sampleRate: SampleRate, tags: String*)(implicit c: StatsdClient): Source[A] = {
+    def withSimpleTimer(metric: String, sampleRate: SampleRate, tags: String*)(implicit c: StatsdClient): Source[A] = {
       val samplingClient = c.sampledAt(sampleRate)
       val bus = Bus[A]
       bus += self.subscribe(a => {
@@ -93,14 +93,14 @@ package object event {
         try {
           bus.publish(a)
         } finally {
-          samplingClient.send(aspect, Time((Deadline.now - start).toMillis), tags)
+          samplingClient.send(metric, Time((Deadline.now - start).toMillis), tags)
         }
       })
       bus
     }
     
     @inline
-    def withTimer(aspect: String, sampleRate: SampleRate, tags: String*)
+    def withTimer(metric: String, sampleRate: SampleRate, tags: String*)
                    (implicit c: StatsdClient, m: TimerMetric[A]): Source[A] = {
       val bus = Bus[A]
       bus += self.subscribe(a => {
@@ -109,7 +109,7 @@ package object event {
           bus.publish(a)
         } finally {
           // TODO Is it intended to use send?
-          m.send(c, aspect, a, Deadline.now - start, sampleRate, tags.toList)
+          m.send(c, metric, a, Deadline.now - start, sampleRate, tags.toList)
         }
       })
       bus
@@ -120,18 +120,18 @@ package object event {
   implicit class SinkSourceOps_Counter_Rht98nT[A, B](val self: SinkSource[A, B]) extends AnyVal {
    
     @inline
-    def withCounter(aspect: String, delta: Long, sampleRate: SampleRate, tags: String*)
+    def withCounter(metric: String, delta: Long, sampleRate: SampleRate, tags: String*)
                    (implicit c: StatsdClient): SinkSource[A, B] = {
       val samplingClient = c.sampledAt(sampleRate)
-      self += self.subscribe(a => samplingClient.send(aspect, Count(delta), tags))
+      self += self.subscribe(a => samplingClient.send(metric, Count(delta), tags))
       self
     }
   
     @inline
-    def withCounter(aspect: String, sampleRate: SampleRate, tags: String*)
+    def withCounter(metric: String, sampleRate: SampleRate, tags: String*)
                    (implicit c: StatsdClient): SinkSource[A, B] = {
       val samplingClient = c.sampledAt(sampleRate)
-      self += self.subscribe(a => samplingClient.send(aspect, Increment(), tags))
+      self += self.subscribe(a => samplingClient.send(metric, Increment(), tags))
       self
     }
   }
@@ -139,18 +139,18 @@ package object event {
   implicit class SourceOps_Counter_Rht98nT[A](val self: Source[A]) extends AnyVal {
 
     @inline
-    def withCounter(aspect: String, delta: Long, sampleRate: SampleRate, tags: String*)
+    def withCounter(metric: String, delta: Long, sampleRate: SampleRate, tags: String*)
                    (implicit c: StatsdClient): Source[A] = {
       val samplingClient = c.sampledAt(sampleRate)
-      self += self.effect(a => samplingClient.send(aspect, Count(delta), tags))
+      self += self.effect(a => samplingClient.send(metric, Count(delta), tags))
       self
     }
     
     @inline
-    def withCounter(aspect: String, sampleRate: SampleRate, tags: String*)
+    def withCounter(metric: String, sampleRate: SampleRate, tags: String*)
                    (implicit c: StatsdClient): Source[A] = {
       val samplingClient = c.sampledAt(sampleRate)
-      self += self.effect(a => samplingClient.send(aspect, Increment(), tags))
+      self += self.effect(a => samplingClient.send(metric, Increment(), tags))
       self
     }
   }
@@ -159,18 +159,18 @@ package object event {
   implicit class SinkSourceOps_Gauge_Rht98nT[A, B](val self: SinkSource[A, B]) extends AnyVal {
   
     @inline
-    def withIntegralGauge(aspect: String, value: B => Long, sampleRate: SampleRate, tags: String*)
+    def withIntegralGauge(metric: String, value: B => Long, sampleRate: SampleRate, tags: String*)
                          (implicit c: StatsdClient): SinkSource[A, B] = {
       val samplingClient = c.sampledAt(sampleRate)
-      self += self.effect(a => samplingClient.send(aspect, LongGauge(value(a)), tags))
+      self += self.effect(a => samplingClient.send(metric, LongGauge(value(a)), tags))
       self
     }
   
     @inline
-    def withFractionalGauge(aspect: String, value: B => Long, sampleRate: SampleRate, tags: String*)
+    def withFractionalGauge(metric: String, value: B => Long, sampleRate: SampleRate, tags: String*)
                          (implicit c: StatsdClient): SinkSource[A, B] = {
       val samplingClient = c.sampledAt(sampleRate)
-      self += self.effect(a => samplingClient.send(aspect, LongGauge(value(a)), tags))
+      self += self.effect(a => samplingClient.send(metric, LongGauge(value(a)), tags))
       self
     }
   }
@@ -178,18 +178,18 @@ package object event {
   implicit class SourceOps_Gauge_Rht98nT[A](val self: Source[A]) extends AnyVal {
   
     @inline
-    def withIntegralGauge(aspect: String, value: A => Long, sampleRate: SampleRate, tags: String*)
+    def withIntegralGauge(metric: String, value: A => Long, sampleRate: SampleRate, tags: String*)
                            (implicit c: StatsdClient): Source[A] = {
       val samplingClient = c.sampledAt(sampleRate)
-      self += self.effect(a => samplingClient.send(aspect, LongGauge(value(a)), tags))
+      self += self.effect(a => samplingClient.send(metric, LongGauge(value(a)), tags))
       self
     }
     
     @inline
-    def withFractionalGauge(aspect: String, value: A => Double, sampleRate: SampleRate, tags: String*)
+    def withFractionalGauge(metric: String, value: A => Double, sampleRate: SampleRate, tags: String*)
                  (implicit c: StatsdClient): Source[A] = {
       val samplingClient = c.sampledAt(sampleRate)
-      self += self.effect(a => samplingClient.send(aspect, DoubleGauge(value(a)), tags))
+      self += self.effect(a => samplingClient.send(metric, DoubleGauge(value(a)), tags))
       self
     }
   }
@@ -198,18 +198,18 @@ package object event {
   implicit class SinkSourceOps_Histogram_Rht98nT[A, B](val self: SinkSource[A, B]) extends AnyVal {
   
     @inline
-    def withIntegralHistogram(aspect: String, value: B => Long, sampleRate: SampleRate, tags: String*)
+    def withIntegralHistogram(metric: String, value: B => Long, sampleRate: SampleRate, tags: String*)
                          (implicit c: StatsdClient): SinkSource[A, B] = {
       val samplingClient = c.sampledAt(sampleRate)
-      self += self.effect(a => samplingClient.send(aspect, LongHistogram(value(a)), tags))
+      self += self.effect(a => samplingClient.send(metric, LongHistogram(value(a)), tags))
       self
     }
   
     @inline
-    def withFractionalHistogram(aspect: String, value: B => Long, sampleRate: SampleRate, tags: String*)
+    def withFractionalHistogram(metric: String, value: B => Long, sampleRate: SampleRate, tags: String*)
                            (implicit c: StatsdClient): SinkSource[A, B] = {
       val samplingClient = c.sampledAt(sampleRate)
-      self += self.effect(a => samplingClient.send(aspect, LongHistogram(value(a)), tags))
+      self += self.effect(a => samplingClient.send(metric, LongHistogram(value(a)), tags))
       self
     }
   }
@@ -217,18 +217,18 @@ package object event {
   implicit class SourceOps_Histogram_Rht98nT[A](val self: Source[A]) extends AnyVal {
   
     @inline
-    def withIntegralHistogram(aspect: String, value: A => Long, sampleRate: SampleRate, tags: String*)
+    def withIntegralHistogram(metric: String, value: A => Long, sampleRate: SampleRate, tags: String*)
                              (implicit c: StatsdClient): Source[A] = {
       val samplingClient = c.sampledAt(sampleRate)
-      self += self.effect(a => samplingClient.send(aspect, LongHistogram(value(a)), tags))
+      self += self.effect(a => samplingClient.send(metric, LongHistogram(value(a)), tags))
       self
     }
   
     @inline
-    def withFractionalHistogram(aspect: String, value: A => Double, sampleRate: SampleRate, tags: String*)
+    def withFractionalHistogram(metric: String, value: A => Double, sampleRate: SampleRate, tags: String*)
                                (implicit c: StatsdClient): Source[A] = {
       val samplingClient = c.sampledAt(sampleRate)
-      self += self.effect(a => samplingClient.send(aspect, DoubleHistogram(value(a)), tags))
+      self += self.effect(a => samplingClient.send(metric, DoubleHistogram(value(a)), tags))
       self
     }
   }

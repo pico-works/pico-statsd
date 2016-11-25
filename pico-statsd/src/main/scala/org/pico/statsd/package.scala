@@ -13,15 +13,15 @@ package object statsd {
     Sink[A](a => f(c, a))
   }
   
-  def metricsSink[A: Sampler](aspect: String, sampleRate: SampleRate, tags: String*)(implicit c: StatsdClient): Sink[A] = {
+  def metricsSink[A: Sampler](metric: String, sampleRate: SampleRate, tags: String*)(implicit c: StatsdClient): Sink[A] = {
     Sink[A](c.sample[A])
   }
   
-  def counterSink[A](aspect: String, sampleRate: SampleRate, delta: Long, tags: String*)(implicit c: StatsdClient): Sink[A] = {
-    Sink[A](a => c.sampledAt(sampleRate).send(aspect, Count(delta), tags))
+  def counterSink[A](metric: String, sampleRate: SampleRate, delta: Long, tags: String*)(implicit c: StatsdClient): Sink[A] = {
+    Sink[A](a => c.sampledAt(sampleRate).send(metric, Count(delta), tags))
   }
   
-  def counterSink[A](aspect: String, sampleRate: SampleRate, tags: String*)(implicit c: StatsdClient): Sink[A] = {
-    Sink[A](a => c.sampledAt(sampleRate).send(aspect, Increment(), tags))
+  def counterSink[A](metric: String, sampleRate: SampleRate, tags: String*)(implicit c: StatsdClient): Sink[A] = {
+    Sink[A](a => c.sampledAt(sampleRate).send(metric, Increment(), tags))
   }
 }

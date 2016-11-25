@@ -84,9 +84,9 @@ final class NonBlockingStatsdClient(
     */
   override def close(): Unit = client.close()
 
-  override def send[D: Printable](aspect: String, sampleRate: SampleRate, d: D, tags: Seq[String]): Unit = {
+  override def send[D: Printable](metric: String, sampleRate: SampleRate, d: D, tags: Seq[String]): Unit = {
     client.send { out =>
-      Printable.of[D].write(out, prefix, aspect, sampleRate, d) { tagWriter =>
+      Printable.of[D].write(out, prefix, metric, sampleRate, d) { tagWriter =>
         constantTags.foreach(tagWriter.writeTag)
         tags.foreach(tagWriter.writeTag)
       }
