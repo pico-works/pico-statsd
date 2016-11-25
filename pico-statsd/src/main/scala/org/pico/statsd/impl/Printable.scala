@@ -28,7 +28,7 @@ object Printable {
         DataPoint.of[D].writeType(out)
 
         if (sampleRate.value != 1.0) {
-          out.print("@")
+          out.print("|@")
           out.print(sampleRate.text)
         }
 
