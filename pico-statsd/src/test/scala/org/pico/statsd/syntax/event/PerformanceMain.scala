@@ -14,7 +14,7 @@ object PerformanceMain {
       statsd      <- Auto(new NonBlockingStatsdClient("attackstream-dedup"))
       udpEmitter  <- Auto(UdpEmitter(Inet.staticStatsdAddressResolution("localhost", 8125)))
       _           <- Auto(statsd.messages into udpEmitter)
-//      _           <- Auto(statsd.messages.subscribe(b => println(new String(b.array(), 0, b.limit()))))
+      _           <- Auto(statsd.messages.subscribe(b => println(new String(b.array(), 0, b.limit()))))
     } {
       implicit val statsdInstance = statsd
 

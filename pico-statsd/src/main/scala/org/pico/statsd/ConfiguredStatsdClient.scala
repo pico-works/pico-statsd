@@ -16,8 +16,8 @@ class ConfiguredStatsdClient(
     */
   override def close(): Unit = impl.close()
 
-  override def send[D: Printable](metric: String, sampleRate: SampleRate, d: D, tags: Seq[String]): Unit = {
-    impl.send(metric, sampleRate, d, tags)
+  override def send[D: Printable](aspect: String, metric: String, sampleRate: SampleRate, d: D, tags: Seq[String]): Unit = {
+    impl.send(aspect, metric, sampleRate, d, tags)
   }
 
   override def sample[S: Sampler](s: S): Unit = {

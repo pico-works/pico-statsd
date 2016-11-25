@@ -13,7 +13,7 @@ object NoopStatsdClient extends StatsdClient {
     */
   override def close(): Unit = ()
 
-  override def send[D: Printable](metric: String, sampleRate: SampleRate, d: D, tags: Seq[String]): Unit = ()
+  override def send[D: Printable](aspect: String, metric: String, sampleRate: SampleRate, d: D, tags: Seq[String]): Unit = ()
 
   override def sample[S: Sampler](s: S): Unit = ()
 

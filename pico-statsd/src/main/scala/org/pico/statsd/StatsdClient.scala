@@ -20,7 +20,11 @@ trait StatsdClient extends Closeable {
 
   def sampleRate: SampleRate
 
-  def send[D: Printable](metric: String, sampleRate: SampleRate, d: D, tags: Seq[String]): Unit
+  def send[D: Printable](aspect: String, metric: String, sampleRate: SampleRate, d: D, tags: Seq[String]): Unit
+
+  final def send[D: Printable](metric: String, sampleRate: SampleRate, d: D, tags: Seq[String]): Unit = {
+    send(aspect, metric, sampleRate, d, tags)
+  }
 
   final def send[D: Printable](metric: String, d: D, tags: Seq[String]): Unit = {
     send(metric, sampleRate, d, tags)
