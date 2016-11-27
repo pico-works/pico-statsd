@@ -1,4 +1,4 @@
-package org.pico.statsd
+package org.pico.statsd.impl
 
 import java.text.{DecimalFormat, NumberFormat}
 import java.util.Locale

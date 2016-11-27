@@ -1,5 +1,10 @@
 package org.pico.statsd
-import org.pico.statsd.datapoint.{DataPointWritable, Sampler}
+
+import java.nio.ByteBuffer
+
+import org.pico.event.{ClosedSource, Source}
+import org.pico.statsd.datapoint.Sampler
+import org.pico.statsd.impl.Printable
 
 object NoopStatsdClient extends StatsdClient {
   /**
@@ -8,11 +13,17 @@ object NoopStatsdClient extends StatsdClient {
     */
   override def close(): Unit = ()
 
-  override def send[D: DataPointWritable](aspect: String, sampleRate: SampleRate, d: D, tags: Seq[String]): Unit = ()
+  override def send[D: Printable](aspect: String, metric: String, sampleRate: SampleRate, d: D, tags: Seq[String]): Unit = ()
 
   override def sample[S: Sampler](s: S): Unit = ()
 
   override def sampleRate: SampleRate = SampleRate.never
 
   override def sampledAt(sampleRate: SampleRate): StatsdClient = this
+
+  override def messages: Source[ByteBuffer] = ClosedSource
+
+  override def aspect: String = ""
+
+  override def withAspect(aspect: String): StatsdClient = this
 }
