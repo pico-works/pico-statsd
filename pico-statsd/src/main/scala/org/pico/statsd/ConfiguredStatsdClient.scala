@@ -3,7 +3,7 @@ package org.pico.statsd
 import java.nio.ByteBuffer
 
 import org.pico.event.Source
-import org.pico.statsd.datapoint.Sampler
+import org.pico.statsd.datapoint.Metric
 import org.pico.statsd.impl.Printable
 
 class ConfiguredStatsdClient(
@@ -20,9 +20,9 @@ class ConfiguredStatsdClient(
     impl.send(aspect, metric, sampleRate, d, tags)
   }
 
-  override def sample[S: Sampler](s: S): Unit = {
+  override def sample[A: Metric](a: A): Unit = {
     if (validSample(sampleRate)) {
-      Sampler.of[S].sendIn(this, s)
+      Metric.of[A].sendIn(this, a)
     }
   }
 

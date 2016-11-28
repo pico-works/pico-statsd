@@ -2,7 +2,6 @@ package org.pico.statsd
 
 import java.io.{Closeable, PrintWriter}
 import java.nio.ByteBuffer
-import java.nio.charset.Charset
 import java.util.concurrent._
 
 import org.pico.event.{Bus, Source}
@@ -25,8 +24,7 @@ import scala.util.control.NonFatal
   * @param queueSize     the maximum amount of unprocessed messages in the BlockingQueue.
   * @throws StatsdClientException if the client could not be started
   */
-final class InternalStatsdClient(
-    val queueSize: Int) extends Closeable {
+final class InternalStatsdClient(val queueSize: Int) extends Closeable {
   val log = Logger[this.type]
 
   log.info("Creating internal statsd client")
@@ -37,15 +35,14 @@ final class InternalStatsdClient(
   private val _messages = Bus[ByteBuffer]
   val messages: Source[ByteBuffer] = _messages
 
-  private val queue: BlockingQueue[PrintWriter => Unit] = new ArrayBlockingQueue[PrintWriter => Unit](10000000)
+  private val queue: BlockingQueue[PrintWriter => Unit] = new LinkedBlockingQueue[PrintWriter => Unit](queueSize)
 
   private val executor: ExecutorService = Executors.newSingleThreadExecutor(new ThreadFactory {
-    final private[statsd] val delegate: ThreadFactory = Executors.defaultThreadFactory
     def newThread(r: Runnable): Thread = {
-      val result: Thread = delegate.newThread(r)
-      result.setName("StatsD-" + result.getName)
-      result.setDaemon(true)
-      result
+      val thread = Executors.defaultThreadFactory.newThread(r)
+      thread.setName("Statsd-" + thread.getName)
+      thread.setDaemon(true)
+      thread
     }
   })
 
@@ -66,15 +63,13 @@ final class InternalStatsdClient(
     }
   }
 
-  def send(f: PrintWriter => Unit) {
-    queue.put(f)
-  }
+  def send(f: PrintWriter => Unit): Unit = queue.put(f)
 
   private class QueueConsumer extends Runnable {
-    def run() {
+    override def run(): Unit = {
       log.info("Statsd push thread started")
 
-      val baos = new AccessibleByteArrayOutputStream(InternalStatsdClient.PACKET_SIZE_BYTES * 2)
+      val baos = new AccessibleByteArrayOutputStream(InternalStatsdClient.packetSizeBytes * 2)
       val out = new PrintWriter(baos, true)
 
       try {
@@ -97,7 +92,7 @@ final class InternalStatsdClient(
 
               val nextOffset = baos.size
 
-              if (nextOffset > InternalStatsdClient.PACKET_SIZE_BYTES) {
+              if (nextOffset > InternalStatsdClient.packetSizeBytes) {
                 _messages.publish(ByteBuffer.wrap(baos.byteArray, 0, lastOffset))
                 baos.drop(lineOffset)
               } else if (queue.peek == null) {
@@ -115,11 +110,9 @@ final class InternalStatsdClient(
         case e: Throwable => log.warn("Fatal error in statsd push thread", e)
       }
     }
-
   }
 }
 
 object InternalStatsdClient {
-  private val PACKET_SIZE_BYTES: Int = 1400
-  val MESSAGE_CHARSET: Charset = Charset.forName("UTF-8")
+  val packetSizeBytes: Int = 1400
 }
