@@ -2,12 +2,11 @@ package org.pico.statsd
 
 import java.io.{Closeable, PrintWriter}
 import java.nio.ByteBuffer
-import java.text.NumberFormat
 import java.util.concurrent._
 
 import org.pico.event.{Bus, Source}
 import org.pico.logging.Logger
-import org.pico.statsd.impl.{AccessibleByteArrayOutputStream, ByteArrayPrintWriter, ByteArrayWindow}
+import org.pico.statsd.impl.{ByteArrayPrintWriter, ByteArrayWindow}
 
 import scala.util.control.NonFatal
 
@@ -93,7 +92,7 @@ final class InternalStatsdClient(val queueSize: Int) extends Closeable {
             val data = queue.poll(1, TimeUnit.SECONDS)
 
             if (null != data) {
-              if (offset + data.length > InternalStatsdClient.packetSizeBytes) {
+              if (offset + data.length + 1 > InternalStatsdClient.packetSizeBytes) {
                 _messages.publish(ByteBuffer.wrap(buffer, 0, offset))
                 offset = 0
               } else if (queue.peek == null && offset > 0) {

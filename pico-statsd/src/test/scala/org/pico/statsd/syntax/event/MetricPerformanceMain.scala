@@ -29,7 +29,7 @@ object MetricPerformanceMain {
       statsd      <- Auto(new NonBlockingStatsdClient("attackstream-dedup", 1000000, Array("club_name:moo")))
       udpEmitter  <- Auto(UdpEmitter(StaticAddressResolution("localhost", 8125)))
       _           <- Auto(statsd.messages into udpEmitter)
-      _           <- Auto(statsd.messages.subscribe(b => println(new String(b.array(), 0, b.limit()))))
+//      _           <- Auto(statsd.messages.subscribe(b => println(new String(b.array(), 0, b.limit()))))
     } {
       implicit val statsdInstance = statsd.sampledAt(SampleRate(0.001))
 
