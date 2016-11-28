@@ -11,7 +11,7 @@ import scala.concurrent.duration.Deadline
 object PerformanceMain {
   def main(args: Array[String]): Unit = {
     for {
-      statsd      <- Auto(new NonBlockingStatsdClient("attackstream-dedup"))
+      statsd      <- Auto(new NonBlockingStatsdClient("client"))
       udpEmitter  <- Auto(UdpEmitter(StaticAddressResolution("localhost", 8125)))
       _           <- Auto(statsd.messages into udpEmitter)
       _           <- Auto(statsd.messages.subscribe(b => println(new String(b.array(), 0, b.limit()))))

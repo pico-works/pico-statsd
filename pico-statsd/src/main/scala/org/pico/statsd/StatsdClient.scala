@@ -10,8 +10,6 @@ import org.pico.statsd.impl.Printable
 /**
   * Describes a client connection to a StatsD server, which may be used to post metrics
   * in the form of counters, timers, and gauges.
-  *
-  * @author Tom Denley
   */
 trait StatsdClient extends Closeable {
   def aspect: String
