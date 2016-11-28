@@ -93,8 +93,8 @@ final class NonBlockingStatsdClient(
     }
   }
 
-  override def sample[S: Metric](s: S): Unit = {
-    Metric.of[S].sendIn(this, s)
+  override def sample[A: Metric](a: A): Unit = {
+    Metric.of[A].sendIn(this, a)
   }
 
   override def sampledAt(sampleRate: SampleRate): StatsdClient = {

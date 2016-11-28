@@ -28,7 +28,7 @@ trait StatsdClient extends Closeable {
     send(metric, sampleRate, d, tags)
   }
 
-  def sample[S: Metric](s: S): Unit
+  def sample[A: Metric](a: A): Unit
 
   def sampledAt(sampleRate: SampleRate): StatsdClient
 

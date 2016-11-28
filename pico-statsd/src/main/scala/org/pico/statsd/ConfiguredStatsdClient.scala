@@ -20,9 +20,9 @@ class ConfiguredStatsdClient(
     impl.send(aspect, metric, sampleRate, d, tags)
   }
 
-  override def sample[S: Metric](s: S): Unit = {
+  override def sample[A: Metric](a: A): Unit = {
     if (validSample(sampleRate)) {
-      Metric.of[S].sendIn(this, s)
+      Metric.of[A].sendIn(this, a)
     }
   }
 

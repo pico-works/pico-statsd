@@ -35,7 +35,7 @@ object Metric {
 
   def of[A: Metric]: Metric[A] = implicitly[Metric[A]]
 
-  def apply[A](samplers: Metric[A]*): Metric[A] = (empty[A] /: samplers)(_ :+: _)
+  def apply[A](metrics: Metric[A]*): Metric[A] = (empty[A] /: metrics)(_ :+: _)
 
   def append[A](self: Metric[A], that: Metric[A]): Metric[A] = {
     new Metric[A] {
