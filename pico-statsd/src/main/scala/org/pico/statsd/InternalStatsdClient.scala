@@ -35,7 +35,7 @@ final class InternalStatsdClient(val queueSize: Int) extends Closeable {
   private val _messages = Bus[ByteBuffer]
   val messages: Source[ByteBuffer] = _messages
 
-  private val queue: BlockingQueue[ByteArrayWindow] = new ArrayBlockingQueue[ByteArrayWindow](10000000)
+  private val queue: BlockingQueue[ByteArrayWindow] = new LinkedBlockingQueue[ByteArrayWindow](queueSize)
 
   private val executor: ExecutorService = Executors.newSingleThreadExecutor(new ThreadFactory {
     def newThread(r: Runnable): Thread = {
