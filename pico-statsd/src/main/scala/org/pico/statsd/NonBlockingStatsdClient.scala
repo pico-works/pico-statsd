@@ -3,7 +3,7 @@ package org.pico.statsd
 import java.nio.ByteBuffer
 
 import org.pico.event.Source
-import org.pico.statsd.datapoint.Sampler
+import org.pico.statsd.datapoint.Metric
 import org.pico.statsd.impl.Printable
 
 /**
@@ -93,8 +93,8 @@ final class NonBlockingStatsdClient(
     }
   }
 
-  override def sample[S: Sampler](s: S): Unit = {
-    Sampler.of[S].sendIn(this, s)
+  override def sample[S: Metric](s: S): Unit = {
+    Metric.of[S].sendIn(this, s)
   }
 
   override def sampledAt(sampleRate: SampleRate): StatsdClient = {

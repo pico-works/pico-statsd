@@ -4,15 +4,15 @@ import org.pico.statsd.StatsdClient
 import org.pico.statsd.syntax.sampler._
 
 @specialized(Long, Double)
-trait Sampler[-A] { self =>
+trait Metric[-A] { self =>
   def constantTags: List[String]
 
   def deriveTags(a: A, tags: List[String]): List[String]
 
   def sendIn(client: StatsdClient, a: A, tags: List[String]): Unit
 
-  def comap[B](f: B => A): Sampler[B] = {
-    new Sampler[B] {
+  def comap[B](f: B => A): Metric[B] = {
+    new Metric[B] {
       override def constantTags: List[String] = self.constantTags
 
       override def deriveTags(b: B, tags: List[String]): List[String] = self.deriveTags(f(b), tags)
@@ -24,8 +24,8 @@ trait Sampler[-A] { self =>
   final def sendIn(client: StatsdClient, a: A): Unit = sendIn(client, a, deriveTags(a, constantTags))
 }
 
-object Sampler {
-  def empty[A]: Sampler[A] = new Sampler[A] {
+object Metric {
+  def empty[A]: Metric[A] = new Metric[A] {
     override def constantTags: List[String] = List.empty
 
     override def deriveTags(a: A, tags: List[String]): List[String] = tags
@@ -33,12 +33,12 @@ object Sampler {
     override def sendIn(client: StatsdClient, a: A, tags: List[String]): Unit = ()
   }
 
-  def of[A: Sampler]: Sampler[A] = implicitly[Sampler[A]]
+  def of[A: Metric]: Metric[A] = implicitly[Metric[A]]
 
-  def apply[A](samplers: Sampler[A]*): Sampler[A] = (empty[A] /: samplers)(_ :+: _)
+  def apply[A](samplers: Metric[A]*): Metric[A] = (empty[A] /: samplers)(_ :+: _)
 
-  def append[A](self: Sampler[A], that: Sampler[A]): Sampler[A] = {
-    new Sampler[A] {
+  def append[A](self: Metric[A], that: Metric[A]): Metric[A] = {
+    new Metric[A] {
       override def sendIn(client: StatsdClient, a: A, tags: List[String]): Unit = {
         self.sendIn(client, a, tags)
         that.sendIn(client, a, tags)
@@ -51,7 +51,7 @@ object Sampler {
   }
 }
 
-case class SumSampler[A](metric: String) extends Sampler[Long] {
+case class SumMetric[A](metric: String) extends Metric[Long] {
   override def constantTags: List[String] = List.empty
 
   override def deriveTags(a: Long, tags: List[String]): List[String] = tags
@@ -61,7 +61,7 @@ case class SumSampler[A](metric: String) extends Sampler[Long] {
   }
 }
 
-case class CountSampler[A](metric: String) extends Sampler[A] {
+case class CountMetric[A](metric: String) extends Metric[A] {
   override def constantTags: List[String] = List.empty
 
   override def deriveTags(a: A, tags: List[String]): List[String] = tags
@@ -71,7 +71,7 @@ case class CountSampler[A](metric: String) extends Sampler[A] {
   }
 }
 
-case class AddSampler[A](metric: String, delta: Long) extends Sampler[A] {
+case class AddMetric[A](metric: String, delta: Long) extends Metric[A] {
   override def constantTags: List[String] = List.empty
 
   override def deriveTags(a: A, tags: List[String]): List[String] = tags
@@ -81,7 +81,7 @@ case class AddSampler[A](metric: String, delta: Long) extends Sampler[A] {
   }
 }
 
-case class IncrementSampler[A](metric: String) extends Sampler[A] {
+case class IncrementMetric[A](metric: String) extends Metric[A] {
   override def constantTags: List[String] = List.empty
 
   override def deriveTags(a: A, tags: List[String]): List[String] = tags
@@ -91,7 +91,7 @@ case class IncrementSampler[A](metric: String) extends Sampler[A] {
   }
 }
 
-case class DecrementSampler[A](metric: String) extends Sampler[A] {
+case class DecrementMetric[A](metric: String) extends Metric[A] {
   override def constantTags: List[String] = List.empty
 
   override def deriveTags(a: A, tags: List[String]): List[String] = tags
@@ -101,7 +101,7 @@ case class DecrementSampler[A](metric: String) extends Sampler[A] {
   }
 }
 
-case class IntegralGaugeSampler(metric: String) extends Sampler[LongGauge] {
+case class IntegralGaugeMetric(metric: String) extends Metric[LongGauge] {
   override def constantTags: List[String] = List.empty
 
   override def sendIn(client: StatsdClient, a: LongGauge, tags: List[String]): Unit = {
@@ -111,7 +111,7 @@ case class IntegralGaugeSampler(metric: String) extends Sampler[LongGauge] {
   override def deriveTags(a: LongGauge, tags: List[String]): List[String] = tags
 }
 
-case class FractionalGaugeSampler(metric: String) extends Sampler[DoubleGauge] {
+case class FractionalGaugeMetric(metric: String) extends Metric[DoubleGauge] {
   override def constantTags: List[String] = List.empty
 
   override def sendIn(client: StatsdClient, a: DoubleGauge, tags: List[String]): Unit = {
@@ -121,7 +121,7 @@ case class FractionalGaugeSampler(metric: String) extends Sampler[DoubleGauge] {
   override def deriveTags(a: DoubleGauge, tags: List[String]): List[String] = tags
 }
 
-case class IntegralHistogramSampler(metric: String) extends Sampler[LongHistogram] {
+case class IntegralHistogramMetric(metric: String) extends Metric[LongHistogram] {
   override def constantTags: List[String] = List.empty
 
   override def sendIn(client: StatsdClient, a: LongHistogram, tags: List[String]): Unit = {
@@ -131,7 +131,7 @@ case class IntegralHistogramSampler(metric: String) extends Sampler[LongHistogra
   override def deriveTags(a: LongHistogram, tags: List[String]): List[String] = tags
 }
 
-case class FractionalHistogramSampler(metric: String) extends Sampler[DoubleHistogram] {
+case class FractionalHistogramMetric(metric: String) extends Metric[DoubleHistogram] {
   override def constantTags: List[String] = List.empty
 
   override def sendIn(client: StatsdClient, a: DoubleHistogram, tags: List[String]): Unit = {
@@ -141,7 +141,7 @@ case class FractionalHistogramSampler(metric: String) extends Sampler[DoubleHist
   override def deriveTags(a: DoubleHistogram, tags: List[String]): List[String] = tags
 }
 
-case class CounterSampler(metric: String) extends Sampler[Long] {
+case class CounterMetric(metric: String) extends Metric[Long] {
   override def constantTags: List[String] = List.empty
 
   override def sendIn(client: StatsdClient, a: Long, tags: List[String]): Unit = {
@@ -151,7 +151,7 @@ case class CounterSampler(metric: String) extends Sampler[Long] {
   override def deriveTags(a: Long, tags: List[String]): List[String] = tags
 }
 
-case class TimerSampler(metric: String) extends Sampler[Time] {
+case class TimerMetric(metric: String) extends Metric[Time] {
   override def constantTags: List[String] = List.empty
 
   override def sendIn(client: StatsdClient, a: Time, tags: List[String]): Unit = {
@@ -161,7 +161,7 @@ case class TimerSampler(metric: String) extends Sampler[Time] {
   override def deriveTags(a: Time, tags: List[String]): List[String] = tags
 }
 
-case class TaggedBy[A](f: A => String) extends Sampler[A] {
+case class TaggedBy[A](f: A => String) extends Metric[A] {
   override def constantTags: List[String] = List.empty
 
   override def deriveTags(a: A, tags: List[String]): List[String] = f(a) :: tags
@@ -169,7 +169,7 @@ case class TaggedBy[A](f: A => String) extends Sampler[A] {
   override def sendIn(client: StatsdClient, a: A, tags: List[String]): Unit = ()
 }
 
-case class TaggedWith[A](tags: List[String]) extends Sampler[A] {
+case class TaggedWith[A](tags: List[String]) extends Metric[A] {
   override def constantTags: List[String] = tags
 
   override def deriveTags(a: A, tags: List[String]): List[String] = tags

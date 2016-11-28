@@ -3,7 +3,7 @@ package org.pico.statsd
 import java.nio.ByteBuffer
 
 import org.pico.event.{ClosedSource, Source}
-import org.pico.statsd.datapoint.Sampler
+import org.pico.statsd.datapoint.Metric
 import org.pico.statsd.impl.Printable
 
 object NoopStatsdClient extends StatsdClient {
@@ -15,7 +15,7 @@ object NoopStatsdClient extends StatsdClient {
 
   override def send[D: Printable](aspect: String, metric: String, sampleRate: SampleRate, d: D, tags: Seq[String]): Unit = ()
 
-  override def sample[S: Sampler](s: S): Unit = ()
+  override def sample[S: Metric](s: S): Unit = ()
 
   override def sampleRate: SampleRate = SampleRate.never
 

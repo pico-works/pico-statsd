@@ -16,9 +16,9 @@ object MetricPerformanceMain {
 
   case class Record(topic: Topic, partition: Long, offset: Long)
 
-  implicit val samplerRecord = Sampler[Record](
-    IntegralGaugeSampler("offset").comap(v => LongGauge(v.offset)),
-    CountSampler("record.count"),
+  implicit val samplerRecord = Metric[Record](
+    IntegralGaugeMetric("offset").comap(v => LongGauge(v.offset)),
+    CountMetric("record.count"),
     TaggedBy(v => "topic:" + v.topic.name),
     TaggedBy(v => "partition:" + v.partition))
 
