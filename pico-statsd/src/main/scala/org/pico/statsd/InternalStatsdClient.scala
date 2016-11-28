@@ -35,7 +35,7 @@ final class InternalStatsdClient(val queueSize: Int) extends Closeable {
   private val _messages = Bus[ByteBuffer]
   val messages: Source[ByteBuffer] = _messages
 
-  private val queue: BlockingQueue[ByteArrayWindow] = new LinkedBlockingQueue[ByteArrayWindow](queueSize)
+  private val queue: ConcurrentLinkedQueue[ByteArrayWindow] = new ConcurrentLinkedQueue[ByteArrayWindow]()
 
   private val executor: ExecutorService = Executors.newSingleThreadExecutor(new ThreadFactory {
     def newThread(r: Runnable): Thread = {
@@ -70,7 +70,7 @@ final class InternalStatsdClient(val queueSize: Int) extends Closeable {
 
     out.flush()
 
-    queue.put(out.outputStream.takeWindow())
+    queue.add(out.outputStream.takeWindow())
   }
 
   object ThreadLocalPrintWriter extends ThreadLocal[ByteArrayPrintWriter] {
@@ -89,7 +89,7 @@ final class InternalStatsdClient(val queueSize: Int) extends Closeable {
 
         while (!executor.isShutdown) {
           try {
-            val data = queue.poll(1, TimeUnit.SECONDS)
+            val data = queue.poll()
 
             if (null != data) {
               if (offset + data.length + 1 > InternalStatsdClient.packetSizeBytes) {
@@ -107,6 +107,8 @@ final class InternalStatsdClient(val queueSize: Int) extends Closeable {
                 System.arraycopy(data.array, data.start, buffer, offset, data.length)
                 offset += data.length
               }
+            } else {
+              Thread.sleep(1)
             }
           } catch {
             case NonFatal(e) =>
