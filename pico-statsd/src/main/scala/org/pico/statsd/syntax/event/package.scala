@@ -54,33 +54,17 @@ package object event {
     @inline
     def withSimpleTimer(metric: String, sampleRate: SampleRate, tags: String*)(implicit c: StatsdClient): SinkSource[A, B] = {
       val configuredClient = c.sampledAt(sampleRate)
-      val tagsArray = tags.toArray
       val bus = Bus[B]
+      val sampler = Sampler[Time](TimerSampler(metric), TaggedWith(tags.toList))
       bus += self.subscribe { a =>
         val start = Deadline.now
         try {
           bus.publish(a)
         } finally {
-          configuredClient.send(metric, Time((Deadline.now - start).toMillis), tagsArray)
+          configuredClient.sample(Time((Deadline.now - start).toMillis))(sampler)
         }
       }
       
-      SinkSource.from(self, bus)
-    }
-    
-    @inline
-    def withTimer(metric: String, sampleRate: SampleRate, tags: String*)(implicit c: StatsdClient, m: TimerMetric[B]): SinkSource[A, B] = {
-      val bus = Bus[B]
-      bus += self.subscribe { a =>
-        val start = Deadline.now
-        try {
-          bus.publish(a)
-        } finally {
-          // TODO Is it intended to use send?
-          m.send(c, metric, a, Deadline.now - start, sampleRate, tags.toList)
-        }
-      }
-  
       SinkSource.from(self, bus)
     }
   }
@@ -92,28 +76,13 @@ package object event {
     def withSimpleTimer(metric: String, sampleRate: SampleRate, tags: String*)(implicit c: StatsdClient): Source[A] = {
       val configuredClient = c.sampledAt(sampleRate)
       val bus = Bus[A]
+      val sampler = Sampler[Time](TimerSampler(metric), TaggedWith(tags.toList))
       bus += self.subscribe(a => {
         val start = Deadline.now
         try {
           bus.publish(a)
         } finally {
-          configuredClient.send(metric, Time((Deadline.now - start).toMillis), tags)
-        }
-      })
-      bus
-    }
-    
-    @inline
-    def withTimer(metric: String, sampleRate: SampleRate, tags: String*)
-                   (implicit c: StatsdClient, m: TimerMetric[A]): Source[A] = {
-      val bus = Bus[A]
-      bus += self.subscribe(a => {
-        val start = Deadline.now
-        try {
-          bus.publish(a)
-        } finally {
-          // TODO Is it intended to use send?
-          m.send(c, metric, a, Deadline.now - start, sampleRate, tags.toList)
+          configuredClient.sample(Time((Deadline.now - start).toMillis))(sampler)
         }
       })
       bus
@@ -127,15 +96,17 @@ package object event {
     def withCounter(metric: String, delta: Long, sampleRate: SampleRate, tags: String*)
                    (implicit c: StatsdClient): SinkSource[A, B] = {
       val configuredClient = c.sampledAt(sampleRate)
-      self += self.subscribe(a => configuredClient.send(metric, Count(delta), tags))
+      val sampler = Sampler[B](AddSampler(metric, delta), TaggedWith(tags.toList))
+      self += self.subscribe(a => configuredClient.sample(a)(sampler))
       self
     }
   
     @inline
     def withCounter(metric: String, sampleRate: SampleRate, tags: String*)
                    (implicit c: StatsdClient): SinkSource[A, B] = {
-      val configuredClient = c.sampledAt(sampleRate)
-      self += self.subscribe(a => configuredClient.send(metric, Increment(), tags))
+      val configuredClient = c.sampledAt(sampleRate).withAspect(metric)
+      val sampler = Sampler[Increment](IncrementSampler(metric), TaggedWith(tags.toList))
+      self += self.subscribe(a => configuredClient.sample(Increment())(sampler))
       self
     }
   }
@@ -146,7 +117,8 @@ package object event {
     def withCounter(metric: String, delta: Long, sampleRate: SampleRate, tags: String*)
                    (implicit c: StatsdClient): Source[A] = {
       val configuredClient = c.sampledAt(sampleRate)
-      self += self.effect(a => configuredClient.send(metric, Count(delta), tags))
+      val sampler = Sampler[Count](IncrementSampler(metric), TaggedWith(tags.toList))
+      self += self.effect(a => configuredClient.sample(Count(delta))(sampler))
       self
     }
     
@@ -154,7 +126,8 @@ package object event {
     def withCounter(metric: String, sampleRate: SampleRate, tags: String*)
                    (implicit c: StatsdClient): Source[A] = {
       val configuredClient = c.sampledAt(sampleRate)
-      self += self.effect(a => configuredClient.send(metric, Increment(), tags))
+      val sampler = Sampler[Increment](IncrementSampler(metric), TaggedWith(tags.toList))
+      self += self.effect(a => configuredClient.sample(Increment())(sampler))
       self
     }
   }
@@ -166,7 +139,8 @@ package object event {
     def withIntegralGauge(metric: String, value: B => Long, sampleRate: SampleRate, tags: String*)
                          (implicit c: StatsdClient): SinkSource[A, B] = {
       val configuredClient = c.sampledAt(sampleRate)
-      self += self.effect(a => configuredClient.send(metric, LongGauge(value(a)), tags))
+      val sampler = Sampler[LongGauge](IntegralGaugeSampler(metric), TaggedWith(tags.toList))
+      self += self.effect(a => configuredClient.sample(LongGauge(value(a)))(sampler))
       self
     }
   
@@ -174,7 +148,8 @@ package object event {
     def withFractionalGauge(metric: String, value: B => Long, sampleRate: SampleRate, tags: String*)
                          (implicit c: StatsdClient): SinkSource[A, B] = {
       val configuredClient = c.sampledAt(sampleRate)
-      self += self.effect(a => configuredClient.send(metric, LongGauge(value(a)), tags))
+      val sampler = Sampler[DoubleGauge](FractionalGaugeSampler(metric), TaggedWith(tags.toList))
+      self += self.effect(a => configuredClient.sample(DoubleGauge(value(a)))(sampler))
       self
     }
   }
@@ -185,7 +160,8 @@ package object event {
     def withIntegralGauge(metric: String, value: A => Long, sampleRate: SampleRate, tags: String*)
                            (implicit c: StatsdClient): Source[A] = {
       val configuredClient = c.sampledAt(sampleRate)
-      self += self.effect(a => configuredClient.send(metric, LongGauge(value(a)), tags))
+      val sampler = Sampler[LongGauge](IntegralGaugeSampler(metric), TaggedWith(tags.toList))
+      self += self.effect(a => configuredClient.sample(LongGauge(value(a)))(sampler))
       self
     }
     
@@ -193,7 +169,8 @@ package object event {
     def withFractionalGauge(metric: String, value: A => Double, sampleRate: SampleRate, tags: String*)
                  (implicit c: StatsdClient): Source[A] = {
       val configuredClient = c.sampledAt(sampleRate)
-      self += self.effect(a => configuredClient.send(metric, DoubleGauge(value(a)), tags))
+      val sampler = Sampler[DoubleGauge](FractionalGaugeSampler(metric), TaggedWith(tags.toList))
+      self += self.effect(a => configuredClient.sample(DoubleGauge(value(a)))(sampler))
       self
     }
   }
@@ -205,7 +182,8 @@ package object event {
     def withIntegralHistogram(metric: String, value: B => Long, sampleRate: SampleRate, tags: String*)
                          (implicit c: StatsdClient): SinkSource[A, B] = {
       val configuredClient = c.sampledAt(sampleRate)
-      self += self.effect(a => configuredClient.send(metric, LongHistogram(value(a)), tags))
+      val sampler = Sampler[LongHistogram](IntegralHistogramSampler(metric), TaggedWith(tags.toList))
+      self += self.effect(a => configuredClient.sample(LongHistogram(value(a)))(sampler))
       self
     }
   
@@ -213,7 +191,8 @@ package object event {
     def withFractionalHistogram(metric: String, value: B => Long, sampleRate: SampleRate, tags: String*)
                            (implicit c: StatsdClient): SinkSource[A, B] = {
       val configuredClient = c.sampledAt(sampleRate)
-      self += self.effect(a => configuredClient.send(metric, LongHistogram(value(a)), tags))
+      val sampler = Sampler[DoubleHistogram](FractionalHistogramSampler(metric), TaggedWith(tags.toList))
+      self += self.effect(a => configuredClient.sample(DoubleHistogram(value(a)))(sampler))
       self
     }
   }
@@ -224,7 +203,8 @@ package object event {
     def withIntegralHistogram(metric: String, value: A => Long, sampleRate: SampleRate, tags: String*)
                              (implicit c: StatsdClient): Source[A] = {
       val configuredClient = c.sampledAt(sampleRate)
-      self += self.effect(a => configuredClient.send(metric, LongHistogram(value(a)), tags))
+      val sampler = Sampler[LongHistogram](IntegralHistogramSampler(metric), TaggedWith(tags.toList))
+      self += self.effect(a => configuredClient.sample(LongHistogram(value(a)))(sampler))
       self
     }
   
@@ -232,7 +212,8 @@ package object event {
     def withFractionalHistogram(metric: String, value: A => Double, sampleRate: SampleRate, tags: String*)
                                (implicit c: StatsdClient): Source[A] = {
       val configuredClient = c.sampledAt(sampleRate)
-      self += self.effect(a => configuredClient.send(metric, DoubleHistogram(value(a)), tags))
+      val sampler = Sampler[DoubleHistogram](FractionalHistogramSampler(metric), TaggedWith(tags.toList))
+      self += self.effect(a => configuredClient.sample(DoubleHistogram(value(a)))(sampler))
       self
     }
   }
