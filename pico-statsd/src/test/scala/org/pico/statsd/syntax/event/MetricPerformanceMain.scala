@@ -5,7 +5,7 @@ import org.pico.disposal.{Auto, Disposable}
 import org.pico.event.Bus
 import org.pico.statsd._
 import org.pico.statsd.datapoint._
-import org.pico.statsd.impl.{Inet, UdpEmitter}
+import org.pico.statsd.impl.{StaticAddressResolution, UdpEmitter}
 
 import scala.concurrent.duration.Deadline
 
@@ -16,9 +16,9 @@ object MetricPerformanceMain {
 
   case class Record(topic: Topic, partition: Long, offset: Long)
 
-  implicit val samplerRecord = Sampler[Record](
-    IntegralGaugeSampler("offset").comap(_.offset),
-    CountSampler("record.count"),
+  implicit val samplerRecord = Metric[Record](
+    IntegralGaugeMetric("offset").comap(v => LongGauge(v.offset)),
+    CountMetric("record.count"),
     TaggedBy(v => "topic:" + v.topic.name),
     TaggedBy(v => "partition:" + v.partition))
 
@@ -27,9 +27,9 @@ object MetricPerformanceMain {
 
     for {
       statsd      <- Auto(new NonBlockingStatsdClient("attackstream-dedup", 1000000, Array("club_name:moo")))
-      udpEmitter  <- Auto(UdpEmitter(Inet.staticStatsdAddressResolution("localhost", 8125)))
+      udpEmitter  <- Auto(UdpEmitter(StaticAddressResolution("localhost", 8125)))
       _           <- Auto(statsd.messages into udpEmitter)
-      _           <- Auto(statsd.messages.subscribe(b => println(new String(b.array(), 0, b.limit()))))
+//      _           <- Auto(statsd.messages.subscribe(b => println(new String(b.array(), 0, b.limit()))))
     } {
       implicit val statsdInstance = statsd.sampledAt(SampleRate(0.001))
 

@@ -4,14 +4,12 @@ import java.io.Closeable
 import java.nio.ByteBuffer
 
 import org.pico.event.Source
-import org.pico.statsd.datapoint.Sampler
+import org.pico.statsd.datapoint.Metric
 import org.pico.statsd.impl.Printable
 
 /**
   * Describes a client connection to a StatsD server, which may be used to post metrics
   * in the form of counters, timers, and gauges.
-  *
-  * @author Tom Denley
   */
 trait StatsdClient extends Closeable {
   def aspect: String
@@ -30,7 +28,7 @@ trait StatsdClient extends Closeable {
     send(metric, sampleRate, d, tags)
   }
 
-  def sample[S: Sampler](s: S): Unit
+  def sample[A: Metric](a: A): Unit
 
   def sampledAt(sampleRate: SampleRate): StatsdClient
 

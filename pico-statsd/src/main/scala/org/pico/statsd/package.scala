@@ -1,7 +1,7 @@
 package org.pico
 
 import org.pico.event.Sink
-import org.pico.statsd.datapoint.{Count, Increment, Sampler}
+import org.pico.statsd.datapoint._
 
 package object statsd {
   /**
@@ -13,18 +13,20 @@ package object statsd {
     Sink[A](a => f(c, a))
   }
   
-  def metricsSink[A: Sampler](aspect: String, sampleRate: SampleRate, tags: String*)(implicit c: StatsdClient): Sink[A] = {
+  def metricsSink[A: Metric](aspect: String, sampleRate: SampleRate, tags: String*)(implicit c: StatsdClient): Sink[A] = {
     val configuredClient = c.withAspect(aspect)
     Sink[A](configuredClient.sample[A])
   }
   
   def counterSink[A](metric: String, sampleRate: SampleRate, delta: Long, tags: String*)(implicit c: StatsdClient): Sink[A] = {
     val configuredClient = c.sampledAt(sampleRate)
-    Sink[A](a => configuredClient.send(metric, Count(delta), tags))
+    val sampler = Metric[A](AddMetric(metric, delta), TaggedWith(tags.toList))
+    Sink[A](a => configuredClient.sample(a)(sampler))
   }
   
   def counterSink[A](metric: String, sampleRate: SampleRate, tags: String*)(implicit c: StatsdClient): Sink[A] = {
     val configuredClient = c.sampledAt(sampleRate)
-    Sink[A](a => configuredClient.send(metric, Increment(), tags))
+    val sampler = Metric[A](IncrementMetric(metric), TaggedWith(tags.toList))
+    Sink[A](a => configuredClient.sample(a)(sampler))
   }
 }
