@@ -1,7 +1,7 @@
 package org.pico.statsd.datapoint
 
 import org.pico.statsd.StatsdClient
-import org.pico.statsd.syntax.sampler._
+import org.pico.statsd.syntax.metric._
 
 @specialized(Long, Double)
 trait Metric[-A] { self =>
