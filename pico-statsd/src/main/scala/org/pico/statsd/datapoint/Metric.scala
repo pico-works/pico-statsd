@@ -61,16 +61,6 @@ case class SumMetric[A](metric: String) extends Metric[Long] {
   }
 }
 
-case class CountMetric[A](metric: String) extends Metric[A] {
-  override def constantTags: List[String] = List.empty
-
-  override def deriveTags(a: A, tags: List[String]): List[String] = tags
-
-  override def sendIn(client: StatsdClient, a: A, tags: List[String]): Unit = {
-    client.send(metric, Increment(), tags)
-  }
-}
-
 case class AddMetric[A](metric: String, delta: Long) extends Metric[A] {
   override def constantTags: List[String] = List.empty
 
@@ -81,18 +71,16 @@ case class AddMetric[A](metric: String, delta: Long) extends Metric[A] {
   }
 }
 
-sealed class IncrementMetric[A] private (metric: String) extends Metric[A] {
-  override def constantTags: List[String] = List.empty
+object CountMetric {
+  def apply[A](metric: String): Metric[A] = new Metric[A] {
+    override def constantTags: List[String] = List.empty
 
-  override def deriveTags(a: A, tags: List[String]): List[String] = tags
+    override def deriveTags(a: A, tags: List[String]): List[String] = tags
 
-  override def sendIn(client: StatsdClient, a: A, tags: List[String]): Unit = {
-    client.send(metric, Increment(), tags)
+    override def sendIn(client: StatsdClient, a: A, tags: List[String]): Unit = {
+      client.send(metric, Increment(), tags)
+    }
   }
-}
-
-object IncrementMetric {
-  def apply[A](metric: String): Metric[A] = new IncrementMetric[A](metric)
 }
 
 case class DecrementMetric[A](metric: String) extends Metric[A] {
@@ -145,14 +133,16 @@ case class FractionalHistogramMetric(metric: String) extends Metric[DoubleHistog
   override def deriveTags(a: DoubleHistogram, tags: List[String]): List[String] = tags
 }
 
-case class CounterMetric(metric: String) extends Metric[Long] {
-  override def constantTags: List[String] = List.empty
+object TotalMetric {
+  def apply(metric: String): Metric[Long] = new Metric[Long] {
+    override def constantTags: List[String] = List.empty
 
-  override def sendIn(client: StatsdClient, a: Long, tags: List[String]): Unit = {
-    client.send(metric, DoubleHistogram(a), tags)
+    override def sendIn(client: StatsdClient, a: Long, tags: List[String]): Unit = {
+      client.send(metric, DoubleHistogram(a), tags)
+    }
+
+    override def deriveTags(a: Long, tags: List[String]): List[String] = tags
   }
-
-  override def deriveTags(a: Long, tags: List[String]): List[String] = tags
 }
 
 case class TimerMetric(metric: String) extends Metric[Time] {

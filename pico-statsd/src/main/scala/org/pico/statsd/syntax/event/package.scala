@@ -101,7 +101,7 @@ package object event {
     def withCounter(metric: String, sampleRate: SampleRate, tags: String*)
                    (implicit c: StatsdClient): SinkSource[A, B] = {
       val configuredClient = c.sampledAt(sampleRate).withAspect(metric)
-      val sampler = Metric[Increment](IncrementMetric(metric), TaggedWith(tags: _*))
+      val sampler = Metric[Increment](CountMetric(metric), TaggedWith(tags: _*))
       self += self.subscribe(a => configuredClient.sample(Increment())(sampler))
       self
     }
@@ -112,7 +112,7 @@ package object event {
     def withCounter(metric: String, delta: Long, sampleRate: SampleRate, tags: String*)
                    (implicit c: StatsdClient): Source[A] = {
       val configuredClient = c.sampledAt(sampleRate)
-      val sampler = Metric[Count](IncrementMetric(metric), TaggedWith(tags: _*))
+      val sampler = Metric[Count](CountMetric(metric), TaggedWith(tags: _*))
       self += self.effect(a => configuredClient.sample(Count(delta))(sampler))
       self
     }
@@ -121,7 +121,7 @@ package object event {
     def withCounter(metric: String, sampleRate: SampleRate, tags: String*)
                    (implicit c: StatsdClient): Source[A] = {
       val configuredClient = c.sampledAt(sampleRate)
-      val sampler = Metric[Increment](IncrementMetric(metric), TaggedWith(tags: _*))
+      val sampler = Metric[Increment](CountMetric(metric), TaggedWith(tags: _*))
       self += self.effect(a => configuredClient.sample(Increment())(sampler))
       self
     }
