@@ -67,8 +67,7 @@ package object event {
       SinkSource.from(self, bus)
     }
   }
-  
-  
+
   implicit class SourceOps_Timer_Rht98nT[A](val self: Source[A]) extends AnyVal {
     @inline
     def withSimpleTimer(metric: String, sampleRate: SampleRate, tags: String*)(implicit c: StatsdClient): Source[A] = {
