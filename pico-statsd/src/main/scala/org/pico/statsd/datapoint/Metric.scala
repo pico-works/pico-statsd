@@ -165,26 +165,22 @@ case class TimerMetric(metric: String) extends Metric[Time] {
   override def deriveTags(a: Time, tags: List[String]): List[String] = tags
 }
 
-sealed class TaggedBy[A] private (f: A => String) extends Metric[A] {
-  override def constantTags: List[String] = List.empty
-
-  override def deriveTags(a: A, tags: List[String]): List[String] = f(a) :: tags
-
-  override def sendIn(client: StatsdClient, a: A, tags: List[String]): Unit = ()
-}
-
 object TaggedBy {
-  def apply[A](f: A => String): Metric[A] = new TaggedBy[A](f)
-}
+  def apply[A](f: A => String): Metric[A] = new Metric[A] {
+    override def constantTags: List[String] = List.empty
 
-sealed class TaggedWith[A] private (tags: List[String]) extends Metric[A] {
-  override def constantTags: List[String] = tags
+    override def deriveTags(a: A, tags: List[String]): List[String] = f(a) :: tags
 
-  override def deriveTags(a: A, tags: List[String]): List[String] = tags
-
-  override def sendIn(client: StatsdClient, a: A, tags: List[String]): Unit = ()
+    override def sendIn(client: StatsdClient, a: A, tags: List[String]): Unit = ()
+  }
 }
 
 object TaggedWith {
-  def apply[A](tags: Seq[String]): Metric[A] = new TaggedWith[A](tags.toList)
+  def apply[A](tags: String*): Metric[A] = new Metric[A] {
+    override val constantTags: List[String] = tags.toList
+
+    override def deriveTags(a: A, tags: List[String]): List[String] = tags
+
+    override def sendIn(client: StatsdClient, a: A, tags: List[String]): Unit = ()
+  }
 }
