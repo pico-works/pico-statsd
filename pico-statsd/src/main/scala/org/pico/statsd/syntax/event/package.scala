@@ -8,13 +8,13 @@ import org.pico.statsd.datapoint.{IntegralHistogramMetric, _}
 import scala.concurrent.duration.Deadline
 
 package object event {
-  
   //-------------------- METRIC --------------------------------------------
   implicit class SinkSourceOps_Metric_Rht98nT[A, B](val self: SinkSource[A, B]) extends AnyVal {
     def withMetrics(aspect: String, sampleRate: SampleRate, tags: String*)(implicit c: StatsdClient, m: Metric[B]): SinkSource[A, B] = {
       val configuredClient = c.sampledAt(sampleRate).withAspect(aspect)
+      val m2 = Metric[B](m, TaggedWith[B](tags.toList))
       self += self.effect { a =>
-        configuredClient.sample[B](a)
+        configuredClient.sample[B](a)(m2)
       }
       self
     }
@@ -23,8 +23,9 @@ package object event {
   implicit class SourceOps_Metric_Rht98nT[A](val self: Source[A]) extends AnyVal {
     def withMetrics(aspect: String, sampleRate: SampleRate, tags: String*)(implicit c: StatsdClient, m: Metric[A]): Source[A] = {
       val configuredClient = c.sampledAt(sampleRate).withAspect(aspect)
+      val m2 = Metric[A](m, TaggedWith[A](tags.toList))
       self += self.effect { a =>
-        configuredClient.sample[A](a)
+        configuredClient.sample[A](a)(m2)
       }
       self
     }
@@ -33,8 +34,7 @@ package object event {
   //-------------------- COMMON --------------------------------------------
   implicit class SinkSourceOps_Common_Rht98nT[A, B](val self: SinkSource[A, B]) extends AnyVal {
     @inline
-    def withStats(f: (StatsdClient, B) => Unit)
-             (implicit c: StatsdClient): SinkSource[A, B] = {
+    def withStats(f: (StatsdClient, B) => Unit)(implicit c: StatsdClient): SinkSource[A, B] = {
       self += self.subscribe(x => f(c, x))
       self
     }
