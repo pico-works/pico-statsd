@@ -81,7 +81,7 @@ case class AddMetric[A](metric: String, delta: Long) extends Metric[A] {
   }
 }
 
-case class IncrementMetric[A](metric: String) extends Metric[A] {
+sealed class IncrementMetric[A] private (metric: String) extends Metric[A] {
   override def constantTags: List[String] = List.empty
 
   override def deriveTags(a: A, tags: List[String]): List[String] = tags
@@ -89,6 +89,10 @@ case class IncrementMetric[A](metric: String) extends Metric[A] {
   override def sendIn(client: StatsdClient, a: A, tags: List[String]): Unit = {
     client.send(metric, Increment(), tags)
   }
+}
+
+object IncrementMetric {
+  def apply[A](metric: String): Metric[A] = new IncrementMetric[A](metric)
 }
 
 case class DecrementMetric[A](metric: String) extends Metric[A] {
@@ -161,7 +165,7 @@ case class TimerMetric(metric: String) extends Metric[Time] {
   override def deriveTags(a: Time, tags: List[String]): List[String] = tags
 }
 
-case class TaggedBy[A](f: A => String) extends Metric[A] {
+sealed class TaggedBy[A] private (f: A => String) extends Metric[A] {
   override def constantTags: List[String] = List.empty
 
   override def deriveTags(a: A, tags: List[String]): List[String] = f(a) :: tags
@@ -169,10 +173,18 @@ case class TaggedBy[A](f: A => String) extends Metric[A] {
   override def sendIn(client: StatsdClient, a: A, tags: List[String]): Unit = ()
 }
 
-case class TaggedWith[A](tags: List[String]) extends Metric[A] {
+object TaggedBy {
+  def apply[A](f: A => String): Metric[A] = new TaggedBy[A](f)
+}
+
+sealed class TaggedWith[A] private (tags: List[String]) extends Metric[A] {
   override def constantTags: List[String] = tags
 
   override def deriveTags(a: A, tags: List[String]): List[String] = tags
 
   override def sendIn(client: StatsdClient, a: A, tags: List[String]): Unit = ()
+}
+
+object TaggedWith {
+  def apply[A](tags: Seq[String]): Metric[A] = new TaggedWith[A](tags.toList)
 }
