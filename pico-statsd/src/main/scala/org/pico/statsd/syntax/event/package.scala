@@ -19,7 +19,7 @@ package object event {
       self
     }
   }
-  
+
   implicit class SourceOps_Metric_Rht98nT[A](val self: Source[A]) extends AnyVal {
     def withMetrics(aspect: String, sampleRate: SampleRate, tags: String*)(implicit c: StatsdClient, m: Metric[A]): Source[A] = {
       val configuredClient = c.sampledAt(sampleRate).withAspect(aspect)
@@ -30,7 +30,7 @@ package object event {
       self
     }
   }
-  
+
   //-------------------- COMMON --------------------------------------------
   implicit class SinkSourceOps_Common_Rht98nT[A, B](val self: SinkSource[A, B]) extends AnyVal {
     @inline
@@ -213,6 +213,41 @@ package object event {
     @inline
     def withMetric(metric: Metric[A])(implicit c: StatsdClient): Source[A] = {
       self += self.effect(a => c.sample(a)(metric))
+      self
+    }
+
+    @inline
+    def withMetric(metric: Metric[A], sampleRate: SampleRate)(implicit c: StatsdClient): Source[A] = {
+      val configuredStatsdClient = c.sampledAt(sampleRate)
+      self += self.effect(a => configuredStatsdClient.sample(a)(metric))
+      self
+    }
+
+    @inline
+    def withMetric(implicit c: StatsdClient, metric: Metric[A]): Source[A] = {
+      self += self.effect(a => c.sample(a)(metric))
+      self
+    }
+
+    @inline
+    def withMetric(tags: String*)(implicit c: StatsdClient, metric: Metric[A]): Source[A] = {
+      val m2 = Metric[A](metric, TaggedWith[A](tags: _*))
+      self += self.effect(a => c.sample(a)(m2))
+      self
+    }
+
+    @inline
+    def withMetric(sampleRate: SampleRate)(implicit c: StatsdClient, metric: Metric[A]): Source[A] = {
+      val configuredStatsdClient = c.sampledAt(sampleRate)
+      self += self.effect(a => configuredStatsdClient.sample(a)(metric))
+      self
+    }
+
+    @inline
+    def withMetric(sampleRate: SampleRate, tags: String*)(implicit c: StatsdClient, metric: Metric[A]): Source[A] = {
+      val configuredStatsdClient = c.sampledAt(sampleRate)
+      val m2 = Metric[A](metric, TaggedWith[A](tags: _*))
+      self += self.effect(a => configuredStatsdClient.sample(a)(m2))
       self
     }
   }
