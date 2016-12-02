@@ -1,7 +1,10 @@
 package org.pico.statsd.syntax.event
 
-import org.pico.event.Bus
-import org.pico.statsd.{NoopStatsdClient, SampleRate}
+import org.pico.event.syntax.sinkSource._
+import org.pico.event.syntax.source._
+import org.pico.event.{Bus, TimedBus}
+import org.pico.statsd.datapoint.{SampledAt, TimerMetric}
+import org.pico.statsd.{MetricSink, NoopStatsdClient, SampleRate}
 import org.specs2.mutable.Specification
 
 class TimersSpec extends Specification {
@@ -9,7 +12,7 @@ class TimersSpec extends Specification {
 
   "Ensuring messages go through" >> {
     "with SinkSource" in {
-      val bus = Bus[Int].withSimpleTimer("bus.test", SampleRate.always)
+      val bus = Bus[Int].viaBus(TimedBus(MetricSink(TimerMetric("bus.test"), SampledAt(SampleRate.always))))
       val sum = bus.foldRight(0)(_ + _)
       
       (1 to 10 ).foreach(bus.publish)
@@ -19,7 +22,7 @@ class TimersSpec extends Specification {
   
     "with Source" in {
       val bus = Bus[Int]
-      val sum = bus.map(x => x + 1).withSimpleTimer("bus.test", SampleRate.always).foldRight(0)(_ + _)
+      val sum = bus.map(x => x + 1).viaBus(TimedBus(MetricSink(TimerMetric("bus.test"), SampledAt(SampleRate.always)))).foldRight(0)(_ + _)
     
       (1 to 10 ).foreach(bus.publish)
     

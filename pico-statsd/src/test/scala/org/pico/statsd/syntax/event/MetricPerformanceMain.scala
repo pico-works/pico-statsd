@@ -3,9 +3,11 @@ package org.pico.statsd.syntax.event
 import org.pico.disposal.std.autoCloseable._
 import org.pico.disposal.{Auto, Disposable}
 import org.pico.event.Bus
+import org.pico.event.syntax.sinkSource._
 import org.pico.statsd._
 import org.pico.statsd.datapoint._
 import org.pico.statsd.impl.{StaticAddressResolution, UdpEmitter}
+import org.pico.statsd.syntax.metric._
 
 import scala.concurrent.duration.Deadline
 
@@ -35,7 +37,7 @@ object MetricPerformanceMain {
 
       val bus = Bus[Record]
 
-      bus.withMetrics("consumer", SampleRate(0.001))
+      bus.tap(MetricSink(Metric() :+: InAspect("consumer") :+: SampledAt(SampleRate(0.001))))
 
       val before = Deadline.now
 

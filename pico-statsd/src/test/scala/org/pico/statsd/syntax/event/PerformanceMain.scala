@@ -3,8 +3,11 @@ package org.pico.statsd.syntax.event
 import org.pico.disposal.Auto
 import org.pico.disposal.std.autoCloseable._
 import org.pico.event.Bus
+import org.pico.event.syntax.sinkSource._
+import org.pico.statsd.datapoint.{CountMetric, SampledAt, TaggedWith}
 import org.pico.statsd.impl.{StaticAddressResolution, UdpEmitter}
-import org.pico.statsd.{NonBlockingStatsdClient, SampleRate}
+import org.pico.statsd.syntax.metric._
+import org.pico.statsd.{MetricSink, NonBlockingStatsdClient, SampleRate}
 
 import scala.concurrent.duration.Deadline
 
@@ -20,7 +23,7 @@ object PerformanceMain {
 
       val bus = Bus[Unit]
 
-      bus.withCounter("consumer.record.count", SampleRate.always, "helloworld")
+      bus.tap(MetricSink(CountMetric("consumer.record.count") :+: SampledAt(SampleRate.always) :+: TaggedWith("helloworld")))
 
       val before = Deadline.now
 

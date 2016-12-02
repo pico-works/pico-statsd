@@ -1,7 +1,9 @@
 package org.pico.statsd.datapoint
 
-import org.pico.statsd.{StatsdClient, SampleRate, StatsdConfig}
+import org.pico.statsd.{SampleRate, StatsdClient, StatsdConfig}
 import org.pico.statsd.syntax.metric._
+
+import scala.concurrent.duration.Duration
 
 @specialized(Long, Double)
 trait Metric[-A] { self =>
@@ -147,14 +149,14 @@ object TotalMetric {
   }
 }
 
-case class TimerMetric(metric: String) extends Metric[Time] {
+case class TimerMetric(metric: String) extends Metric[Duration] {
   override def constantTags: List[String] = List.empty
 
-  override def sendIn(client: StatsdClient, a: Time, tags: List[String]): Unit = {
-    client.send(client.config, metric, a, tags)
+  override def sendIn(client: StatsdClient, a: Duration, tags: List[String]): Unit = {
+    client.send(client.config, metric, Time(a.toMillis), tags)
   }
 
-  override def deriveTags(a: Time, tags: List[String]): List[String] = tags
+  override def deriveTags(a: Duration, tags: List[String]): List[String] = tags
 }
 
 object TaggedBy {
