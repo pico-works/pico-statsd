@@ -13,7 +13,7 @@ trait Metric[-A] { self =>
 
   def deriveTags(a: A, tags: List[String]): List[String]
 
-  def sendIn(client: StatsdClient, a: A, tags: List[String]): Unit
+  def sendIn(client: StatsdClient, config: StatsdConfig, a: A, tags: List[String]): Unit
 
   def comap[B](f: B => A): Metric[B] = {
     new Metric[B] {
@@ -21,11 +21,15 @@ trait Metric[-A] { self =>
 
       override def deriveTags(b: B, tags: List[String]): List[String] = self.deriveTags(f(b), tags)
 
-      override def sendIn(client: StatsdClient, b: B, tags: List[String]): Unit = self.sendIn(client, f(b), tags)
+      override def sendIn(client: StatsdClient, config: StatsdConfig, b: B, tags: List[String]): Unit = {
+        self.sendIn(client, config, f(b), tags)
+      }
     }
   }
 
-  final def sendIn(client: StatsdClient, a: A): Unit = sendIn(client, a, deriveTags(a, constantTags))
+  final def sendIn(client: StatsdClient, config: StatsdConfig, a: A): Unit = {
+    sendIn(client, config, a, deriveTags(a, constantTags))
+  }
 }
 
 object Metric {
@@ -34,7 +38,7 @@ object Metric {
 
     override def deriveTags(a: A, tags: List[String]): List[String] = tags
 
-    override def sendIn(client: StatsdClient, a: A, tags: List[String]): Unit = ()
+    override def sendIn(client: StatsdClient, config: StatsdConfig, a: A, tags: List[String]): Unit = ()
   }
 
   def of[A: Metric]: Metric[A] = implicitly[Metric[A]]
@@ -43,9 +47,9 @@ object Metric {
 
   def append[A](self: Metric[A], that: Metric[A]): Metric[A] = {
     new Metric[A] {
-      override def sendIn(client: StatsdClient, a: A, tags: List[String]): Unit = {
-        self.sendIn(client, a, tags)
-        that.sendIn(client, a, tags)
+      override def sendIn(client: StatsdClient, config: StatsdConfig, a: A, tags: List[String]): Unit = {
+        self.sendIn(client, config, a, tags)
+        that.sendIn(client, config, a, tags)
       }
 
       lazy val constantTags: List[String] = self.constantTags ++ that.constantTags
@@ -60,7 +64,7 @@ case class SumMetric[A](metric: String) extends Metric[Long] {
 
   override def deriveTags(a: Long, tags: List[String]): List[String] = tags
 
-  override def sendIn(client: StatsdClient, a: Long, tags: List[String]): Unit = {
+  override def sendIn(client: StatsdClient, config: StatsdConfig, a: Long, tags: List[String]): Unit = {
     client.send(client.config, metric, Count(a), tags)
   }
 }
@@ -70,7 +74,7 @@ case class AddMetric[A](metric: String, delta: Long) extends Metric[A] {
 
   override def deriveTags(a: A, tags: List[String]): List[String] = tags
 
-  override def sendIn(client: StatsdClient, a: A, tags: List[String]): Unit = {
+  override def sendIn(client: StatsdClient, config: StatsdConfig, a: A, tags: List[String]): Unit = {
     client.send(client.config, metric, Count(delta), tags)
   }
 }
@@ -81,7 +85,7 @@ object CountMetric {
 
     override def deriveTags(a: A, tags: List[String]): List[String] = tags
 
-    override def sendIn(client: StatsdClient, a: A, tags: List[String]): Unit = {
+    override def sendIn(client: StatsdClient, config: StatsdConfig, a: A, tags: List[String]): Unit = {
       client.send(client.config, metric, Increment(), tags)
     }
   }
@@ -92,7 +96,7 @@ case class DecrementMetric[A](metric: String) extends Metric[A] {
 
   override def deriveTags(a: A, tags: List[String]): List[String] = tags
 
-  override def sendIn(client: StatsdClient, a: A, tags: List[String]): Unit = {
+  override def sendIn(client: StatsdClient, config: StatsdConfig, a: A, tags: List[String]): Unit = {
     client.send(client.config, metric, Decrement(), tags)
   }
 }
@@ -100,7 +104,7 @@ case class DecrementMetric[A](metric: String) extends Metric[A] {
 case class IntegralGaugeMetric(metric: String) extends Metric[LongGauge] {
   override def constantTags: List[String] = List.empty
 
-  override def sendIn(client: StatsdClient, a: LongGauge, tags: List[String]): Unit = {
+  override def sendIn(client: StatsdClient, config: StatsdConfig, a: LongGauge, tags: List[String]): Unit = {
     client.send(client.config, metric, a, tags)
   }
 
@@ -110,7 +114,7 @@ case class IntegralGaugeMetric(metric: String) extends Metric[LongGauge] {
 case class FractionalGaugeMetric(metric: String) extends Metric[DoubleGauge] {
   override def constantTags: List[String] = List.empty
 
-  override def sendIn(client: StatsdClient, a: DoubleGauge, tags: List[String]): Unit = {
+  override def sendIn(client: StatsdClient, config: StatsdConfig, a: DoubleGauge, tags: List[String]): Unit = {
     client.send(client.config, metric, a, tags)
   }
 
@@ -120,7 +124,7 @@ case class FractionalGaugeMetric(metric: String) extends Metric[DoubleGauge] {
 case class IntegralHistogramMetric(metric: String) extends Metric[LongHistogram] {
   override def constantTags: List[String] = List.empty
 
-  override def sendIn(client: StatsdClient, a: LongHistogram, tags: List[String]): Unit = {
+  override def sendIn(client: StatsdClient, config: StatsdConfig, a: LongHistogram, tags: List[String]): Unit = {
     client.send(client.config, metric, a, tags)
   }
 
@@ -130,7 +134,7 @@ case class IntegralHistogramMetric(metric: String) extends Metric[LongHistogram]
 case class FractionalHistogramMetric(metric: String) extends Metric[DoubleHistogram] {
   override def constantTags: List[String] = List.empty
 
-  override def sendIn(client: StatsdClient, a: DoubleHistogram, tags: List[String]): Unit = {
+  override def sendIn(client: StatsdClient, config: StatsdConfig, a: DoubleHistogram, tags: List[String]): Unit = {
     client.send(client.config, metric, a, tags)
   }
 
@@ -141,7 +145,7 @@ object TotalMetric {
   def apply(metric: String): Metric[Long] = new Metric[Long] {
     override def constantTags: List[String] = List.empty
 
-    override def sendIn(client: StatsdClient, a: Long, tags: List[String]): Unit = {
+    override def sendIn(client: StatsdClient, config: StatsdConfig, a: Long, tags: List[String]): Unit = {
       client.send(client.config, metric, DoubleHistogram(a), tags)
     }
 
@@ -152,7 +156,7 @@ object TotalMetric {
 case class TimerMetric(metric: String) extends Metric[Duration] {
   override def constantTags: List[String] = List.empty
 
-  override def sendIn(client: StatsdClient, a: Duration, tags: List[String]): Unit = {
+  override def sendIn(client: StatsdClient, config: StatsdConfig, a: Duration, tags: List[String]): Unit = {
     client.send(client.config, metric, Time(a.toMillis), tags)
   }
 
@@ -165,7 +169,7 @@ object TaggedBy {
 
     override def deriveTags(a: A, tags: List[String]): List[String] = f(a) :: tags
 
-    override def sendIn(client: StatsdClient, a: A, tags: List[String]): Unit = ()
+    override def sendIn(client: StatsdClient, config: StatsdConfig, a: A, tags: List[String]): Unit = ()
   }
 }
 
@@ -175,7 +179,7 @@ object TaggedWith {
 
     override def deriveTags(a: A, tags: List[String]): List[String] = tags
 
-    override def sendIn(client: StatsdClient, a: A, tags: List[String]): Unit = ()
+    override def sendIn(client: StatsdClient, config: StatsdConfig, a: A, tags: List[String]): Unit = ()
   }
 }
 
@@ -187,7 +191,7 @@ object InAspect {
 
     override def deriveTags(a: A, tags: List[String]): List[String] = tags
 
-    override def sendIn(client: StatsdClient, a: A, tags: List[String]): Unit = ()
+    override def sendIn(client: StatsdClient, config: StatsdConfig, a: A, tags: List[String]): Unit = ()
   }
 }
 
@@ -199,6 +203,6 @@ object SampledAt {
 
     override def deriveTags(a: A, tags: List[String]): List[String] = tags
 
-    override def sendIn(client: StatsdClient, a: A, tags: List[String]): Unit = ()
+    override def sendIn(client: StatsdClient, config: StatsdConfig, a: A, tags: List[String]): Unit = ()
   }
 }

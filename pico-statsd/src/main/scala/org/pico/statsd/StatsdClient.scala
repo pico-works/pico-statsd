@@ -27,8 +27,11 @@ trait StatsdClient extends Closeable {
   }
 
   def sample[A: Metric](a: A): Unit = {
-    if (validSample(Metric.of[A].configure(config).sampleRate)) {
-      Metric.of[A].sendIn(this, a)
+    val metric = Metric.of[A]
+    val derivedConfig = metric.configure(config)
+
+    if (validSample(derivedConfig.sampleRate)) {
+      Metric.of[A].sendIn(this, derivedConfig, a)
     }
   }
 
