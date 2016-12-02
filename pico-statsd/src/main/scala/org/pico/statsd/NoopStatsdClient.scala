@@ -15,15 +15,9 @@ object NoopStatsdClient extends StatsdClient {
 
   override def send[D: Printable](aspect: String, metric: String, sampleRate: SampleRate, d: D, tags: Seq[String]): Unit = ()
 
-  override def sample[A: Metric](a: A): Unit = ()
-
-  override def sampleRate: SampleRate = SampleRate.never
-
-  override def sampledAt(sampleRate: SampleRate): StatsdClient = this
-
   override def messages: Source[ByteBuffer] = ClosedSource
 
-  override def aspect: String = ""
+  override def config: StatsdConfig = StatsdConfig("", SampleRate.never)
 
-  override def withAspect(aspect: String): StatsdClient = this
+  override def configured(config: StatsdConfig): StatsdClient = this
 }

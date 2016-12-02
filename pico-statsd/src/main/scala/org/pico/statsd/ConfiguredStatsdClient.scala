@@ -6,10 +6,9 @@ import org.pico.event.Source
 import org.pico.statsd.datapoint.Metric
 import org.pico.statsd.impl.Printable
 
-class ConfiguredStatsdClient(
+case class ConfiguredStatsdClient(
     impl: StatsdClient,
-    override val aspect: String,
-    override val sampleRate: SampleRate) extends StatsdClient {
+    config: StatsdConfig) extends StatsdClient {
   /**
     * Cleanly shut down this StatsD client. This method may throw an exception if
     * the socket cannot be closed.
@@ -20,19 +19,7 @@ class ConfiguredStatsdClient(
     impl.send(aspect, metric, sampleRate, d, tags)
   }
 
-  override def sample[A: Metric](a: A): Unit = {
-    if (validSample(sampleRate)) {
-      Metric.of[A].sendIn(this, a)
-    }
-  }
-
-  override def sampledAt(sampleRate: SampleRate): StatsdClient = {
-    new ConfiguredStatsdClient(impl, aspect, sampleRate)
-  }
-
-  override def withAspect(aspect: String): StatsdClient = {
-    new ConfiguredStatsdClient(impl, aspect, sampleRate)
-  }
-
   override def messages: Source[ByteBuffer] = impl.messages
+
+  override def configured(config: StatsdConfig): StatsdClient = new ConfiguredStatsdClient(impl, config)
 }
