@@ -3,8 +3,7 @@ package org.pico.statsd.syntax.event
 import org.pico.event.syntax.sinkSource._
 import org.pico.event.syntax.source._
 import org.pico.event.{Bus, TimedBus}
-import org.pico.statsd.datapoint.{SampledAt, TimerMetric}
-import org.pico.statsd.{MetricSink, NoopStatsdClient, SampleRate}
+import org.pico.statsd._
 import org.specs2.mutable.Specification
 
 class TimersSpec extends Specification {

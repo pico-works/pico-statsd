@@ -5,7 +5,6 @@ import org.pico.disposal.{Auto, Disposable}
 import org.pico.event.Bus
 import org.pico.event.syntax.sinkSource._
 import org.pico.statsd._
-import org.pico.statsd.datapoint._
 import org.pico.statsd.impl.{StaticAddressResolution, UdpEmitter}
 import org.pico.statsd.syntax.metric._
 

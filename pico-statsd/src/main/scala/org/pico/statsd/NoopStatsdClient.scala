@@ -3,7 +3,6 @@ package org.pico.statsd
 import java.nio.ByteBuffer
 
 import org.pico.event.{ClosedSource, Source}
-import org.pico.statsd.datapoint.Metric
 import org.pico.statsd.impl.Printable
 
 object NoopStatsdClient extends StatsdClient {

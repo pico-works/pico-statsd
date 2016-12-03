@@ -1,4 +1,4 @@
-package org.pico.statsd.datapoint
+package org.pico.statsd
 
 import java.io.PrintWriter
 

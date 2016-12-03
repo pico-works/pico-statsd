@@ -1,7 +1,6 @@
 package org.pico.statsd
 
 import org.pico.event.Sink
-import org.pico.statsd.datapoint.Metric
 import org.pico.statsd.syntax.metric._
 
 object MetricSink {

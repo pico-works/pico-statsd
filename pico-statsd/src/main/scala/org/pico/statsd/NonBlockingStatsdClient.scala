@@ -3,7 +3,6 @@ package org.pico.statsd
 import java.nio.ByteBuffer
 
 import org.pico.event.Source
-import org.pico.statsd.datapoint.Metric
 import org.pico.statsd.impl.Printable
 
 case class NonBlockingStatsdClient private (
@@ -27,7 +26,7 @@ case class NonBlockingStatsdClient private (
 
   override def messages: Source[ByteBuffer] = client.messages
 
-  override def config: StatsdConfig = StatsdConfig.defaultConfig
+  override def config: StatsdConfig = StatsdConfig.default
 
   override def configured(config: StatsdConfig): StatsdClient = ConfiguredStatsdClient(this, config)
 }

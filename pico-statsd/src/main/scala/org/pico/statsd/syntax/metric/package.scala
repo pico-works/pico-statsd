@@ -1,6 +1,6 @@
 package org.pico.statsd.syntax
 
-import org.pico.statsd.datapoint.{Metric, TaggedBy, TaggedWith}
+import org.pico.statsd.{Metric, TaggedBy, TaggedWith}
 
 package object metric {
   implicit class MetricOps_vy4ffYh[A](val self: Metric[A]) extends AnyVal {

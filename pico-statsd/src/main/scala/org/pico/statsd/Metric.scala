@@ -1,6 +1,5 @@
-package org.pico.statsd.datapoint
+package org.pico.statsd
 
-import org.pico.statsd.{SampleRate, StatsdClient, StatsdConfig}
 import org.pico.statsd.syntax.metric._
 
 import scala.concurrent.duration.Duration
