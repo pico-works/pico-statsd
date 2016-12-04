@@ -3,7 +3,6 @@ package org.pico.statsd
 import java.nio.ByteBuffer
 
 import org.pico.event.Source
-import org.pico.statsd.impl.Printable
 
 case class NonBlockingStatsdClient private (
     prefix: String = "",

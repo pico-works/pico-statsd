@@ -1,8 +1,8 @@
-package org.pico.statsd.impl
+package org.pico.statsd
 
 import java.io.PrintWriter
 
-import org.pico.statsd.{DataPoint, SampleRate}
+import org.pico.statsd.impl.TagWriter
 
 trait Printable[A] {
   def write(out: PrintWriter, prefix: String, metric: String, sampleRate: SampleRate, a: A)(writeExtraTags: TagWriter => Unit): Unit

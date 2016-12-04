@@ -4,7 +4,6 @@ import java.io.Closeable
 import java.nio.ByteBuffer
 
 import org.pico.event.Source
-import org.pico.statsd.impl.Printable
 
 /**
   * Describes a client connection to a StatsD server, which may be used to post metrics

@@ -3,8 +3,8 @@ package org.pico.statsd.syntax.event
 import org.pico.disposal.Auto
 import org.pico.disposal.std.autoCloseable._
 import org.pico.event.Bus
+import org.pico.event.net.UdpEmitter
 import org.pico.event.syntax.sinkSource._
-import org.pico.statsd.impl.{StaticAddressResolution, UdpEmitter}
 import org.pico.statsd.syntax.metric._
 import org.pico.statsd._
 

@@ -1,8 +1,8 @@
-package org.pico.statsd.impl
+package org.pico.statsd
 
 import java.net.{InetAddress, InetSocketAddress}
 
-object VolatileAddressResolution {
+object StaticAddressResolution {
   /**
     * Lookup the address for the given host name and cache the result.
     *
@@ -12,6 +12,7 @@ object VolatileAddressResolution {
     * @throws Exception if the lookup fails, i.e. { @link UnknownHostException}
     */
   def apply(hostname: String, port: Int): () => InetSocketAddress = {
-    () => new InetSocketAddress(InetAddress.getByName(hostname), port)
+    val address = new InetSocketAddress(InetAddress.getByName(hostname), port)
+    () => address
   }
 }
