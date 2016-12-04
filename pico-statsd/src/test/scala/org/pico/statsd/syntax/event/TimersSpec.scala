@@ -11,7 +11,7 @@ class TimersSpec extends Specification {
 
   "Ensuring messages go through" >> {
     "with SinkSource" in {
-      val bus = Bus[Int].viaBus(TimedBus(MetricSink(TimerMetric("bus.test"), SampledAt(SampleRate.always))))
+      val bus = Bus[Int].via(TimedBus(MetricSink(TimerMetric("bus.test"), SampledAt(SampleRate.always))))
       val sum = bus.foldRight(0)(_ + _)
       
       (1 to 10 ).foreach(bus.publish)
@@ -21,7 +21,7 @@ class TimersSpec extends Specification {
   
     "with Source" in {
       val bus = Bus[Int]
-      val sum = bus.map(x => x + 1).viaBus(TimedBus(MetricSink(TimerMetric("bus.test"), SampledAt(SampleRate.always)))).foldRight(0)(_ + _)
+      val sum = bus.map(x => x + 1).via(TimedBus(MetricSink(TimerMetric("bus.test"), SampledAt(SampleRate.always)))).foldRight(0)(_ + _)
     
       (1 to 10 ).foreach(bus.publish)
     
