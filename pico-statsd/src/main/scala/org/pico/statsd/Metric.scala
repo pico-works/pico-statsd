@@ -8,6 +8,10 @@ import scala.concurrent.duration.Duration
 trait Metric[-A] { self =>
   def configure(config: StatsdConfig): StatsdConfig = config
 
+  def inAspect(aspect: String): Metric[A] = configured(_.copy(aspect = aspect))
+
+  def sampledAt(sampleRate: SampleRate): Metric[A] = configured(_.copy(sampleRate = sampleRate))
+
   def constantTags: List[String]
 
   def deriveTags(a: A, tags: List[String]): List[String]
@@ -28,6 +32,20 @@ trait Metric[-A] { self =>
 
   final def sendIn(client: StatsdClient, config: StatsdConfig, a: A): Unit = {
     sendIn(client, config, a, deriveTags(a, constantTags))
+  }
+
+  final def configured(modify: StatsdConfig => StatsdConfig): Metric[A] = {
+    new Metric[A] {
+      override def configure(config: StatsdConfig): StatsdConfig = modify(self.configure(config))
+
+      override def constantTags: List[String] = self.constantTags
+
+      override def deriveTags(a: A, tags: List[String]): List[String] = self.deriveTags(a, tags)
+
+      override def sendIn(client: StatsdClient, config: StatsdConfig, a: A, tags: List[String]): Unit = {
+        self.sendIn(client, config, a, tags)
+      }
+    }
   }
 }
 
