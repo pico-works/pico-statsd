@@ -13,4 +13,16 @@ object MetricSink {
   def apply[A]()(implicit statsdClient: StatsdClient, metric: Metric[A]): Sink[A] = {
     Sink[A](statsdClient.sample(_)(metric))
   }
+
+  def apply[A](aspect: String, metric: Metric[A], metrics: Metric[A]*)(implicit statsdClient: StatsdClient): Sink[A] = {
+    val combinedMetric = (metric /: metrics)(_ :+: _).inAspect(aspect)
+
+    Sink[A](statsdClient.sample(_)(combinedMetric))
+  }
+
+  def apply[A](aspect: String)(implicit statsdClient: StatsdClient, metric: Metric[A]): Sink[A] = {
+    val modifiedMetric = metric.inAspect(aspect)
+
+    Sink[A](statsdClient.sample(_)(modifiedMetric))
+  }
 }
