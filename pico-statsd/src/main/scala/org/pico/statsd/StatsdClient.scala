@@ -4,7 +4,7 @@ import java.io.Closeable
 import java.nio.ByteBuffer
 
 import org.pico.event.Source
-import org.pico.statsd.datapoint.Metric
+import org.pico.statsd.datapoint.{Alert, Metric}
 import org.pico.statsd.impl.Printable
 
 /**
@@ -28,6 +28,8 @@ trait StatsdClient extends Closeable {
     send(metric, sampleRate, d, tags)
   }
 
+  def alert[A: Alert](a: A): Unit
+  
   def sample[A: Metric](a: A): Unit
 
   def sampledAt(sampleRate: SampleRate): StatsdClient

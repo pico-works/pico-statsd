@@ -3,7 +3,7 @@ package org.pico.statsd
 import java.nio.ByteBuffer
 
 import org.pico.event.{ClosedSource, Source}
-import org.pico.statsd.datapoint.Metric
+import org.pico.statsd.datapoint.{Alert, Metric}
 import org.pico.statsd.impl.Printable
 
 object NoopStatsdClient extends StatsdClient {
@@ -12,7 +12,9 @@ object NoopStatsdClient extends StatsdClient {
     * the socket cannot be closed.
     */
   override def close(): Unit = ()
-
+  
+  def alert[A: Alert](a: A): Unit = ()
+  
   override def send[D: Printable](aspect: String, metric: String, sampleRate: SampleRate, d: D, tags: Seq[String]): Unit = ()
 
   override def sample[A: Metric](a: A): Unit = ()

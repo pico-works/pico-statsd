@@ -8,6 +8,7 @@ object Build extends sbt.Build {
   val pico_logging    = "org.pico"              %%  "pico-logging"          % "4.0.1"
 
   val specs2_core     = "org.specs2"            %%  "specs2-core"           % "3.8.6"
+  val specs2_props    = "org.specs2"            %%  "specs2-scalacheck"     % "3.8.6"
 
   implicit class ProjectOps(self: Project) {
     def standard(theDescription: String) = {
@@ -34,7 +35,7 @@ object Build extends sbt.Build {
   lazy val `pico-statsd` = Project(id = "pico-statsd", base = file("pico-statsd"))
       .standard("Statsd library")
       .libs(pico_atomic, pico_disposal, pico_event, pico_logging)
-      .testLibs(specs2_core)
+      .testLibs(specs2_core, specs2_props)
 
   lazy val all = Project(id = "pico-statsd-project", base = file("."))
       .notPublished
