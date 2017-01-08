@@ -8,6 +8,29 @@ import org.pico.statsd.datapoint.{IntegralHistogramMetric, _}
 import scala.concurrent.duration.Deadline
 
 package object event {
+  //--------------------  EVENT --------------------------------------------
+  implicit class SinkSourceOps_Alert_Rht98nT[A, B](val self: SinkSource[A, B]) extends AnyVal {
+    def withAlert(aspect: String, tags: String*)(implicit c: StatsdClient, m: Alert[B]): SinkSource[A, B] = {
+      val configuredClient = c.withAspect(aspect)
+      val evt = Alert[B](m, EventTaggedWith(tags.toList))
+      self += self.effect { a =>
+        configuredClient.alert(a)(evt)
+      }
+      self
+    }
+  }
+  
+  implicit class SourceOps_Alert_Rht98nT[A](val self: Source[A]) extends AnyVal {
+    def withAlert(aspect: String, tags: String*)(implicit c: StatsdClient, m: Alert[A]): Source[A] = {
+      val configuredClient = c.withAspect(aspect)
+      val m2 = Alert[A](m, EventTaggedWith[A](tags.toList))
+      self += self.effect { a =>
+        configuredClient.alert[A](a)(m2)
+      }
+      self
+    }
+  }
+  
   //-------------------- METRIC --------------------------------------------
   implicit class SinkSourceOps_Metric_Rht98nT[A, B](val self: SinkSource[A, B]) extends AnyVal {
     def withMetrics(aspect: String, sampleRate: SampleRate, tags: String*)(implicit c: StatsdClient, m: Metric[B]): SinkSource[A, B] = {
